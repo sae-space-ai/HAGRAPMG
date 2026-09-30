@@ -3,6 +3,9 @@
  * Deep Planning & Continual Replanning
  * 
  * SCIENTIFIC STATUS: IMPLEMENTED
+ * 
+ * ARCHITECTURAL RULE: WP5 extends WP2-WP4.
+ * Uses WP5-prefixed names to avoid conflicts with canonical types.
  */
 
 import { Timestamped, Uncertainty } from './types.ts';
