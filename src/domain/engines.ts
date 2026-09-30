@@ -1,6 +1,22 @@
 /**
- * HAG-RAP LAB — Deep Reasoning Engine (§9-15)
- * Modular reasoning: Deductive, Abductive, Defeasible, Causal
+ * HAG-RAP LAB — Engines Module
+ * 
+ * WP CLASSIFICATION (per ORDER 1 acceptance correction):
+ * 
+ * DeductiveEngine     → WP3 EXPERIMENTAL_PROTOTYPE (deterministic core, not validated)
+ * AbductiveEngine     → WP3 EXPERIMENTAL_PROTOTYPE (hypothesis generation, not validated)
+ * DefeasibleEngine    → WP3 EXPERIMENTAL_PROTOTYPE (exception handling, not validated)
+ * ContradictionEngine → WP2_FOUNDATION (contradiction handling is core to evidence graph)
+ * CausalEngine        → WP3 EXPERIMENTAL_PROTOTYPE (representational only, no causal discovery)
+ * AbstractionEngine   → WP4 EXPERIMENTAL_PROTOTYPE (deterministic patterns, not learned)
+ * WorldModelEngine    → WP4 EXPERIMENTAL_PROTOTYPE (rule-based transitions, not learned)
+ * PlanningEngine      → WP5 FUTURE_INTERFACE (structural planning, not optimized)
+ * AssuranceEngine     → WP2_FOUNDATION (runtime monitors are part of core substrate)
+ * GovernanceEngine    → WP2_FOUNDATION (human review is core to evidence graph)
+ * ResourceEngine      → WP6 FUTURE_INTERFACE (routing logic prepared, not measured)
+ * 
+ * These engines are DECOUPLED from WP2 core. WP2 (EvidenceGraphMemory)
+ * functions independently without any of these engines.
  * 
  * SCIENTIFIC STATUS: IMPLEMENTED (deterministic core)
  * Probabilistic inference: NOT_IMPLEMENTED

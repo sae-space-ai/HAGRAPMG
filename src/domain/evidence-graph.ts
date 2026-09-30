@@ -13,6 +13,7 @@ import {
   ClaimStatus, EvidenceStatus, ConflictCause,
   JustificationGraph, JustificationNode, JustificationEdge,
   CognitiveStateSnapshot, ChangeRecord, ChangeDetail,
+  Uncertainty,
   createTimestamped, now, generateId
 } from './types.ts';
 
@@ -606,5 +607,194 @@ export class EvidenceGraphMemory {
       stateSnapshots: this.stateHistory.length,
       changeRecords: this.changeRecords.length,
     };
+  }
+
+  // ---- Unknowns / Readiness (§7, §58) ----
+  getUnknowns(): {
+    unknownClaims: Claim[];
+    missingEvidence: EvidenceItem[];
+    contestedClaims: Claim[];
+    unresolvedContradictions: Contradiction[];
+    unverifiedAssumptions: Assumption[];
+    openUncertainties: Array<{ entityId: string; entityType: string; uncertainty: Uncertainty }>;
+  } {
+    const unknownClaims = Array.from(this.claims.values()).filter(c => c.status === 'UNKNOWN');
+    const missingEvidence = Array.from(this.evidence.values()).filter(e => e.status === 'MISSING');
+    const contestedClaims = Array.from(this.claims.values()).filter(c => c.status === 'CONTESTED');
+    const unresolvedContradictions = this.getUnresolvedContradictions();
+    const unverifiedAssumptions = Array.from(this.assumptions.values()).filter(a => a.status === 'ASSUMED' || a.status === 'UNKNOWN');
+    
+    const openUncertainties: Array<{ entityId: string; entityType: string; uncertainty: Uncertainty }> = [];
+    for (const claim of this.claims.values()) {
+      for (const u of claim.uncertainty) {
+        openUncertainties.push({ entityId: claim.id, entityType: 'Claim', uncertainty: u });
+      }
+    }
+    for (const ev of this.evidence.values()) {
+      if (ev.confidence !== undefined && ev.confidence < 1.0) {
+        openUncertainties.push({ 
+          entityId: ev.id, entityType: 'Evidence', 
+          uncertainty: { type: 'EPISTEMIC', description: `Confidence: ${ev.confidence}` }
+        });
+      }
+    }
+
+    return { unknownClaims, missingEvidence, contestedClaims, unresolvedContradictions, unverifiedAssumptions, openUncertainties };
+  }
+
+  getReadiness(): {
+    status: 'NOT_READY' | 'READY_FOR_REASONING' | 'READY_FOR_REVIEW' | 'READY_FOR_EXECUTION';
+    blockers: string[];
+    warnings: string[];
+  } {
+    const unknowns = this.getUnknowns();
+    const blockers: string[] = [];
+    const warnings: string[] = [];
+
+    if (unknowns.missingEvidence.length > 0) {
+      blockers.push(`Missing evidence: ${unknowns.missingEvidence.length} items`);
+    }
+    if (unknowns.unresolvedContradictions.length > 0) {
+      blockers.push(`Unresolved contradictions: ${unknowns.unresolvedContradictions.length}`);
+    }
+    if (unknowns.contestedClaims.length > 0) {
+      warnings.push(`Contested claims: ${unknowns.contestedClaims.length}`);
+    }
+    if (unknowns.openUncertainties.length > 0) {
+      warnings.push(`Open uncertainties: ${unknowns.openUncertainties.length}`);
+    }
+    if (this.claims.size === 0) {
+      blockers.push('No claims in graph');
+    }
+    if (this.evidence.size === 0) {
+      blockers.push('No evidence in graph');
+    }
+
+    let status: 'NOT_READY' | 'READY_FOR_REASONING' | 'READY_FOR_REVIEW' | 'READY_FOR_EXECUTION' = 'NOT_READY';
+    if (blockers.length === 0 && warnings.length === 0) {
+      status = 'READY_FOR_EXECUTION';
+    } else if (blockers.length === 0) {
+      status = 'READY_FOR_REVIEW';
+    } else if (unknowns.missingEvidence.length === 0 && unknowns.unresolvedContradictions.length === 0) {
+      status = 'READY_FOR_REASONING';
+    }
+
+    return { status, blockers, warnings };
+  }
+
+  // ---- Import / Export (§9) ----
+  exportGraph(): {
+    schemaVersion: string;
+    exportedAt: string;
+    sources: Source[];
+    evidence: EvidenceItem[];
+    claims: Claim[];
+    assumptions: Assumption[];
+    inferences: Inference[];
+    contradictions: Contradiction[];
+    interventions: HumanIntervention[];
+    relations: GraphRelation[];
+    stateHistory: CognitiveStateSnapshot[];
+    changeRecords: ChangeRecord[];
+  } {
+    return {
+      schemaVersion: '1.0.0',
+      exportedAt: now(),
+      sources: Array.from(this.sources.values()),
+      evidence: Array.from(this.evidence.values()),
+      claims: Array.from(this.claims.values()),
+      assumptions: Array.from(this.assumptions.values()),
+      inferences: Array.from(this.inferences.values()),
+      contradictions: Array.from(this.contradictions.values()),
+      interventions: Array.from(this.interventions.values()),
+      relations: [...this.relations],
+      stateHistory: [...this.stateHistory],
+      changeRecords: [...this.changeRecords],
+    };
+  }
+
+  importGraph(data: unknown): { success: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!data || typeof data !== 'object') {
+      return { success: false, errors: ['Import data must be an object'] };
+    }
+
+    const d = data as Record<string, unknown>;
+
+    if (!d.schemaVersion || typeof d.schemaVersion !== 'string') {
+      return { success: false, errors: ['Missing or invalid schemaVersion'] };
+    }
+
+    if (!Array.isArray(d.sources) || !Array.isArray(d.evidence) || !Array.isArray(d.claims)) {
+      return { success: false, errors: ['Missing required arrays: sources, evidence, claims'] };
+    }
+
+    // Validate each entity has required fields
+    for (const s of d.sources as Array<Record<string, unknown>>) {
+      if (!s.id || !s.name) errors.push(`Invalid source: missing id or name`);
+    }
+    for (const e of d.evidence as Array<Record<string, unknown>>) {
+      if (!e.id || !e.sourceId || !e.content) errors.push(`Invalid evidence: missing required fields`);
+    }
+    for (const c of d.claims as Array<Record<string, unknown>>) {
+      if (!c.id || !c.content || !c.status) errors.push(`Invalid claim: missing required fields`);
+      if (c.status && !['OBSERVED', 'INFERRED', 'ASSUMED', 'CONTESTED', 'SUPERSEDED', 'UNKNOWN'].includes(c.status as string)) {
+        errors.push(`Invalid claim status: ${c.status}`);
+      }
+    }
+
+    if (errors.length > 0) {
+      return { success: false, errors };
+    }
+
+    // Clear and import
+    this.sources.clear();
+    this.evidence.clear();
+    this.claims.clear();
+    this.assumptions.clear();
+    this.inferences.clear();
+    this.contradictions.clear();
+    this.interventions.clear();
+    this.relations = [];
+    this.stateHistory = [];
+    this.changeRecords = [];
+
+    for (const s of d.sources as Source[]) this.sources.set(s.id, s);
+    for (const e of d.evidence as EvidenceItem[]) this.evidence.set(e.id, e);
+    for (const c of d.claims as Claim[]) this.claims.set(c.id, c);
+    if (Array.isArray(d.assumptions)) for (const a of d.assumptions as Assumption[]) this.assumptions.set(a.id, a);
+    if (Array.isArray(d.inferences)) for (const i of d.inferences as Inference[]) this.inferences.set(i.id, i);
+    if (Array.isArray(d.contradictions)) for (const c of d.contradictions as Contradiction[]) this.contradictions.set(c.id, c);
+    if (Array.isArray(d.interventions)) for (const i of d.interventions as HumanIntervention[]) this.interventions.set(i.id, i);
+    if (Array.isArray(d.relations)) this.relations = d.relations as GraphRelation[];
+    if (Array.isArray(d.stateHistory)) this.stateHistory = d.stateHistory as CognitiveStateSnapshot[];
+    if (Array.isArray(d.changeRecords)) this.changeRecords = d.changeRecords as ChangeRecord[];
+
+    return { success: true, errors: [] };
+  }
+
+  // ---- Clear ----
+  clear(): void {
+    this.sources.clear();
+    this.evidence.clear();
+    this.claims.clear();
+    this.assumptions.clear();
+    this.inferences.clear();
+    this.contradictions.clear();
+    this.causalNodes.clear();
+    this.causalEdges.clear();
+    this.causalHypotheses.clear();
+    this.concepts.clear();
+    this.abstractionNodes.clear();
+    this.abstractionEdges.clear();
+    this.worldModels.clear();
+    this.plans.clear();
+    this.goals.clear();
+    this.constraints.clear();
+    this.interventions.clear();
+    this.relations = [];
+    this.stateHistory = [];
+    this.changeRecords = [];
   }
 }

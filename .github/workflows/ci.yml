@@ -24,6 +24,9 @@ jobs:
       - name: TypeCheck
         run: npm run typecheck
       
+      - name: Run Test Suite T001-T060
+        run: npx tsx tests/run.ts
+      
       - name: Build
         run: npm run build
       

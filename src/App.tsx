@@ -11,6 +11,7 @@ import {
   createCognitiveLoop, runDemonstrationCase, runCriticalTests,
   CognitiveLoopState, TestResult
 } from './services/cognitive-loop.ts';
+import { executeAllTests, type TestSuite } from './tests/executor.ts';
 import type {
   Claim, EvidenceItem, Contradiction, Plan, HumanIntervention,
   JustificationGraph, CognitiveStateSnapshot, ChangeDetail,
@@ -24,6 +25,7 @@ type TabId = 'overview' | 'evidence' | 'claims' | 'contradictions' | 'reasoning'
 interface AppState {
   loop: CognitiveLoopState | null;
   testResults: TestResult[];
+  fullTestSuite: TestSuite | null;
   selectedTab: TabId;
   selectedClaimId: string | null;
   justificationGraph: JustificationGraph | null;
@@ -92,21 +94,27 @@ export default function App() {
   const [state, setState] = useState<AppState>({
     loop: null,
     testResults: [],
+    fullTestSuite: null,
     selectedTab: 'overview',
     selectedClaimId: null,
     justificationGraph: null,
     isRunning: false,
   });
 
-  const runDemo = useCallback(() => {
+  const runDemo = useCallback(async () => {
     setState(s => ({ ...s, isRunning: true }));
     const loop = createCognitiveLoop();
     runDemonstrationCase(loop);
     const results = runCriticalTests(loop);
+    
+    // Execute full T001-T060 test suite
+    const fullSuite = await executeAllTests();
+    
     setState(s => ({
       ...s,
       loop,
       testResults: results,
+      fullTestSuite: fullSuite,
       isRunning: false,
     }));
   }, []);
@@ -203,7 +211,7 @@ export default function App() {
           {state.selectedTab === 'assurance' && <AssurancePanel loop={loop} />}
           {state.selectedTab === 'governance' && <GovernancePanel loop={loop} />}
           {state.selectedTab === 'provenance' && <ProvenancePanel loop={loop} jg={state.justificationGraph} />}
-          {state.selectedTab === 'tests' && <TestsPanel results={state.testResults} />}
+          {state.selectedTab === 'tests' && <TestsPanel results={state.testResults} fullSuite={state.fullTestSuite} />}
           {state.selectedTab === 'objectives' && <ObjectivesPanel />}
           {state.selectedTab === 'log' && <LogPanel loop={loop} />}
         </main>
@@ -892,15 +900,45 @@ function ProvenancePanel({ loop, jg }: { loop: CognitiveLoopState; jg: Justifica
   );
 }
 
-function TestsPanel({ results }: { results: TestResult[] }) {
+function TestsPanel({ results, fullSuite }: { results: TestResult[]; fullSuite: TestSuite | null }) {
   const passed = results.filter(r => r.passed).length;
   const failed = results.filter(r => !r.passed).length;
 
   return (
     <div className="space-y-4">
+      {/* Full T001-T060 Test Suite */}
+      {fullSuite && (
+        <div className="border border-cyan-900/30 rounded-lg p-4 bg-cyan-950/10">
+          <h3 className="text-sm font-mono text-cyan-400 mb-3">
+            Complete Test Suite T001-T060 — <span className="text-green-400">{fullSuite.passed} passed</span> / <span className="text-red-400">{fullSuite.failed} failed</span> / {fullSuite.total} total ({fullSuite.duration}ms)
+          </h3>
+          <div className="space-y-1 max-h-[400px] overflow-y-auto">
+            {fullSuite.results.map(r => (
+              <div key={r.id} className={`flex items-start gap-2 text-xs font-mono border-b border-gray-800/30 py-1 ${r.passed ? '' : 'bg-red-950/20'}`}>
+                <span className={r.passed ? 'text-green-400' : 'text-red-400'}>{r.passed ? '✓' : '✗'}</span>
+                <span className="text-cyan-400 w-12">{r.id}</span>
+                <span className="text-gray-300 flex-1">{r.name}</span>
+                <span className="text-gray-500 text-[10px]">{r.duration}ms</span>
+              </div>
+            ))}
+          </div>
+          {fullSuite.failed > 0 && (
+            <div className="mt-3 border-t border-red-900/30 pt-2">
+              <div className="text-xs text-red-400 font-mono mb-1">FAILED TESTS:</div>
+              {fullSuite.results.filter(r => !r.passed).map(r => (
+                <div key={r.id} className="text-xs text-red-300 ml-4">
+                  {r.id}: {r.details.split('\n')[0]}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Original Critical Tests */}
       <div className="border border-gray-800 rounded-lg p-4">
         <h3 className="text-sm font-mono text-gray-300 mb-3">
-          Critical Test Suite — <span className="text-green-400">{passed} passed</span> / <span className="text-red-400">{failed} failed</span> / {results.length} total
+          Critical Test Suite (Legacy) — <span className="text-green-400">{passed} passed</span> / <span className="text-red-400">{failed} failed</span> / {results.length} total
         </h3>
         <div className="space-y-2">
           {results.map(r => (
