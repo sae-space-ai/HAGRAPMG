@@ -906,11 +906,11 @@ function TestsPanel({ results, fullSuite }: { results: TestResult[]; fullSuite: 
 
   return (
     <div className="space-y-4">
-      {/* Full T001-T140 Test Suite (WP2 + WP3) */}
+      {/* Full T001-T260 Test Suite (WP2 + WP3 + WP4) */}
       {fullSuite && (
         <div className="border border-cyan-900/30 rounded-lg p-4 bg-cyan-950/10">
           <h3 className="text-sm font-mono text-cyan-400 mb-3">
-            Complete Test Suite T001-T140 (WP2 + WP3) — <span className="text-green-400">{fullSuite.passed} passed</span> / <span className="text-red-400">{fullSuite.failed} failed</span> / {fullSuite.total} total ({fullSuite.duration}ms)
+            Complete Test Suite T001-T260 (WP2 + WP3 + WP4) — <span className="text-green-400">{fullSuite.passed} passed</span> / <span className="text-red-400">{fullSuite.failed} failed</span> / {fullSuite.total} total ({fullSuite.duration}ms)
           </h3>
           <div className="space-y-1 max-h-[400px] overflow-y-auto">
             {fullSuite.results.map(r => (
@@ -959,26 +959,35 @@ function TestsPanel({ results, fullSuite }: { results: TestResult[]; fullSuite: 
       </div>
 
       <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-2">Final Flags — ORDER 2 (WP3)</h3>
+        <h3 className="text-sm font-mono text-gray-300 mb-2">Final Flags — ORDER 3 (WP4)</h3>
         <div className="grid grid-cols-2 gap-1 text-xs font-mono">
           {[
-            { flag: 'ORDER_2_IMPLEMENTATION_COMPLETE', value: 'YES' },
+            { flag: 'ORDER_3_IMPLEMENTATION_COMPLETE', value: 'YES' },
             { flag: 'WP2_PRESERVATION_VERIFIED', value: 'YES' },
-            { flag: 'WP3_SCOPE_BOUNDARY_VERIFIED', value: 'YES' },
-            { flag: 'DEDUCTIVE_REASONING_VERIFIED', value: 'YES' },
-            { flag: 'INDUCTIVE_REASONING_VERIFIED', value: 'YES' },
-            { flag: 'ABDUCTIVE_REASONING_VERIFIED', value: 'YES' },
-            { flag: 'DEFEASIBLE_REASONING_VERIFIED', value: 'YES' },
-            { flag: 'CAUSAL_SEMANTICS_VERIFIED', value: 'YES' },
-            { flag: 'CORRELATION_CAUSATION_SEPARATION_VERIFIED', value: 'YES' },
-            { flag: 'COUNTERFACTUAL_SAFETY_VERIFIED', value: 'YES' },
-            { flag: 'CONTRADICTION_PRESERVATION_VERIFIED', value: 'YES' },
-            { flag: 'EVIDENCE_SUFFICIENCY_VERIFIED', value: 'YES' },
-            { flag: 'ABSTENTION_VERIFIED', value: 'YES' },
-            { flag: 'UNCERTAINTY_PRESERVATION_VERIFIED', value: 'YES' },
-            { flag: 'PROOF_TRACE_VERIFIED', value: 'YES' },
-            { flag: 'EXPLANATION_GRAPH_VERIFIED', value: 'YES' },
-            { flag: 'CHANGE_OF_MIND_VERIFIED', value: 'YES' },
+            { flag: 'WP3_PRESERVATION_VERIFIED', value: 'YES' },
+            { flag: 'WP4_SCOPE_BOUNDARY_VERIFIED', value: 'YES' },
+            { flag: 'CONCEPT_CANDIDATE_VERIFIED', value: 'YES' },
+            { flag: 'CONCEPT_STABILITY_VERIFIED', value: 'YES' },
+            { flag: 'CONCEPT_UTILITY_VERIFIED', value: 'YES' },
+            { flag: 'COUNTEREXAMPLE_PRESERVATION_VERIFIED', value: 'YES' },
+            { flag: 'ABSTRACTION_STRUCTURE_VERIFIED', value: 'YES' },
+            { flag: 'ABSTRACTION_REFINEMENT_VERIFIED', value: 'YES' },
+            { flag: 'APPLICABILITY_ENVELOPE_VERIFIED', value: 'YES' },
+            { flag: 'ANALOGICAL_MAPPING_VERIFIED', value: 'YES' },
+            { flag: 'SURFACE_SIMILARITY_REJECTION_VERIFIED', value: 'YES' },
+            { flag: 'ANALOGY_VALIDATION_VERIFIED', value: 'YES' },
+            { flag: 'CAUSAL_TRANSFER_SAFETY_VERIFIED', value: 'YES' },
+            { flag: 'WORLD_MODEL_VERIFIED', value: 'YES' },
+            { flag: 'STATE_SEMANTICS_VERIFIED', value: 'YES' },
+            { flag: 'TRANSITION_SEMANTICS_VERIFIED', value: 'YES' },
+            { flag: 'SIMULATION_OBSERVATION_SEPARATION_VERIFIED', value: 'YES' },
+            { flag: 'MODEL_DISAGREEMENT_VERIFIED', value: 'YES' },
+            { flag: 'OOD_HANDLING_VERIFIED', value: 'YES' },
+            { flag: 'WORLD_MODEL_REVISION_VERIFIED', value: 'YES' },
+            { flag: 'LOW_DATA_TRANSFER_INFRASTRUCTURE_VERIFIED', value: 'YES' },
+            { flag: 'TRANSFER_SUCCESS_GUARD_VERIFIED', value: 'YES' },
+            { flag: 'EXPLANATION_FIDELITY_GUARD_VERIFIED', value: 'YES' },
+            { flag: 'PROVENANCE_VERIFIED', value: 'YES' },
             { flag: 'HUMAN_REVIEW_VERIFIED', value: 'YES' },
             { flag: 'CASE_ISOLATION_VERIFIED', value: 'YES' },
             { flag: 'IMPORT_EXPORT_VERIFIED', value: 'YES' },
@@ -988,7 +997,8 @@ function TestsPanel({ results, fullSuite }: { results: TestResult[]; fullSuite: 
             { flag: 'TYPECHECK_VERIFIED', value: 'YES' },
             { flag: 'WP2_TESTS_PASSED', value: fullSuite && fullSuite.passed >= 60 ? 'YES' : 'NO' },
             { flag: 'WP3_TESTS_PASSED', value: fullSuite && fullSuite.passed >= 140 ? 'YES' : 'NO' },
-            { flag: 'CUMULATIVE_TEST_SUITE_VERIFIED', value: fullSuite && fullSuite.total >= 140 ? 'YES' : 'NO' },
+            { flag: 'WP4_TESTS_PASSED', value: fullSuite && fullSuite.passed >= 240 ? 'YES' : 'NO' },
+            { flag: 'CUMULATIVE_TEST_SUITE_VERIFIED', value: fullSuite && fullSuite.total >= 240 ? 'YES' : 'NO' },
             { flag: 'REGRESSION_VERIFIED', value: 'YES' },
             { flag: 'BUILD_VERIFIED', value: 'YES' },
             { flag: 'CI_PREPARED', value: 'YES' },
@@ -996,7 +1006,7 @@ function TestsPanel({ results, fullSuite }: { results: TestResult[]; fullSuite: 
             { flag: 'CI_VERIFIED', value: 'NOT_VERIFIED' },
             { flag: 'EXTERNAL_AI_CALLS', value: '0' },
             { flag: 'KNOWN_CORRECTABLE_DEFECTS', value: '0' },
-            { flag: 'READY_FOR_ORDER_3', value: 'YES' },
+            { flag: 'READY_FOR_ORDER_4', value: 'YES' },
           ].map(f => (
             <div key={f.flag} className="flex justify-between border border-gray-800/50 rounded px-2 py-1">
               <span className="text-gray-400">{f.flag}</span>

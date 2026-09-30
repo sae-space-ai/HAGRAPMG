@@ -1153,6 +1153,556 @@ export interface ClaimExtraction {
 }
 
 // ============================================================
+// WP4 DOMAIN TYPES (§4)
+// ============================================================
+
+export type ConceptStatus =
+  | 'CANDIDATE'
+  | 'UNDER_TEST'
+  | 'STABLE_WITHIN_ENVELOPE'
+  | 'UNSTABLE'
+  | 'CONTESTED'
+  | 'RETIRED'
+  | 'SUPERSEDED'
+  | 'UNKNOWN';
+
+export type StabilityStatus =
+  | 'STABLE_WITHIN_ENVELOPE'
+  | 'UNSTABLE'
+  | 'CONTESTED'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'UNKNOWN';
+
+export type AbstractionRelation =
+  | 'INSTANCE_OF'
+  | 'SPECIALISES'
+  | 'GENERALISES'
+  | 'OVERLAPS'
+  | 'RELATED_TO'
+  | 'SUPERSEDES';
+
+export type ApplicabilityStatus =
+  | 'SUPPORTED_WITHIN_ENVELOPE'
+  | 'OUTSIDE_ENVELOPE'
+  | 'BOUNDARY_CASE'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'CONTESTED'
+  | 'UNKNOWN';
+
+export type AnalogyStatus =
+  | 'CANDIDATE'
+  | 'STRUCTURALLY_SUPPORTED'
+  | 'PARTIALLY_SUPPORTED'
+  | 'VALIDATED_WITHIN_ENVELOPE'
+  | 'CONTESTED'
+  | 'INVALIDATED'
+  | 'UNKNOWN';
+
+export type StateVariableStatus =
+  | 'OBSERVED'
+  | 'INFERRED'
+  | 'ASSUMED'
+  | 'PREDICTED'
+  | 'UNKNOWN';
+
+export type OODStatus =
+  | 'IN_DISTRIBUTION'
+  | 'POSSIBLY_OOD'
+  | 'OUT_OF_DISTRIBUTION'
+  | 'NOT_ASSESSED'
+  | 'UNKNOWN';
+
+export type TransferConfigurationType =
+  | 'NO_TRANSFER'
+  | 'EMBEDDING_TRANSFER'
+  | 'WORLD_MODEL_TRANSFER'
+  | 'CONCEPT_PLUS_CAUSAL_TRANSFER';
+
+export type AbstentionReasonWP4 =
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'UNSTABLE_CONCEPT'
+  | 'OUTSIDE_APPLICABILITY_ENVELOPE'
+  | 'ANALOGY_UNSUPPORTED'
+  | 'CAUSAL_TRANSFER_UNSUPPORTED'
+  | 'WORLD_MODEL_UNSUPPORTED'
+  | 'OOD'
+  | 'TRANSFER_NOT_VALIDATED'
+  | 'UNKNOWN';
+
+// ============================================================
+// WP4 CONCEPT ENTITIES (§4-8)
+// ============================================================
+
+export interface ObservationInstance extends Timestamped {
+  caseId: string;
+  content: string;
+  properties: Record<string, unknown>;
+  relations: string[];
+  evidenceIds: string[];
+  context: string;
+}
+
+export interface RelationalPattern extends Timestamped {
+  pattern: string;
+  instances: string[];
+  frequency: number;
+  context: string;
+}
+
+export interface FunctionalRole extends Timestamped {
+  name: string;
+  description: string;
+  instances: string[];
+  causalRole?: string;
+}
+
+export interface CausalRole extends Timestamped {
+  name: string;
+  causeEffectRelation: string;
+  instances: string[];
+  assumptions: string[];
+}
+
+export interface ConceptCandidate extends Timestamped {
+  name: string;
+  definition: string;
+  status: ConceptStatus;
+  supportingInstances: string[];
+  relations: string[];
+  counterexamples: string[];
+  causalRoles: string[];
+  functionalRoles: string[];
+  taskContext: string;
+  sourceEvidenceIds: string[];
+  assumptions: string[];
+  uncertainties: Uncertainty[];
+  generationMethod: string;
+  caseId?: string;
+}
+
+export interface ConceptDefinition extends Timestamped {
+  conceptId: string;
+  definition: string;
+  necessaryConditions: string[];
+  sufficientConditions: string[];
+  examples: string[];
+  counterexamples: string[];
+  version: number;
+}
+
+export interface ConceptCounterexample extends Timestamped {
+  conceptId: string;
+  instance: string;
+  violatedExpectation: string;
+  source: string;
+  context: string;
+  relevance: string;
+  effectOnConcept: 'REFINE' | 'SPLIT' | 'SPECIALISE' | 'CONTEST' | 'RETIRE';
+  humanReview?: string;
+}
+
+export interface ConceptStabilityAssessment extends Timestamped {
+  conceptId: string;
+  testSet: string[];
+  status: StabilityStatus;
+  perturbations: Array<{
+    type: string;
+    description: string;
+    result: string;
+  }>;
+  failures: string[];
+  uncertainty: Uncertainty[];
+  counterexamples: string[];
+  limits: string[];
+}
+
+export interface ConceptUtilityAssessment extends Timestamped {
+  conceptId: string;
+  discrimination: number | null;
+  compression: number | null;
+  explanatoryRelevance: number | null;
+  taskRelevance: number | null;
+  transferRelevance: number | null;
+  overallUtility: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
+  notes: string;
+}
+
+export interface ConceptRevision extends Timestamped {
+  conceptId: string;
+  revisionType: 'REFINE' | 'SPLIT' | 'SPECIALISE' | 'GENERALISE' | 'RETIRE' | 'SUPERSEDE';
+  previousVersion: number;
+  newVersion: number;
+  reason: string;
+  evidence: string[];
+  actorOrMethod: string;
+}
+
+// ============================================================
+// WP4 ABSTRACTION STRUCTURE (§9-10)
+// ============================================================
+
+export interface WP4AbstractionNode extends Timestamped {
+  nodeId: string;
+  type: 'INSTANCE' | 'CONCEPT' | 'SCHEMA';
+  content: string;
+  definition?: string;
+  relations: string[];
+  examples: string[];
+  counterexamples: string[];
+  causalRole?: string;
+  functionalRole?: string;
+  uncertainty: Uncertainty[];
+  applicabilityEnvelopeId?: string;
+  evidenceIds: string[];
+  history: string[];
+  caseId?: string;
+}
+
+export interface WP4AbstractionEdge extends Timestamped {
+  sourceNodeId: string;
+  targetNodeId: string;
+  relation: AbstractionRelation;
+  strength?: number;
+  evidence?: string[];
+}
+
+export interface AbstractionLattice extends Timestamped {
+  name: string;
+  description: string;
+  nodeIds: string[];
+  edgeIds: string[];
+  rootIds: string[];
+  leafIds: string[];
+  caseId?: string;
+}
+
+// Alias para compatibilidad con código WP2/WP3 existente
+export type WP4AbstractionNodeType = WP4AbstractionNode['type'];
+
+export interface AbstractionOperation extends Timestamped {
+  operationType: 'MERGE' | 'SPLIT' | 'SPECIALISE' | 'GENERALISE' | 'REFINE' | 'RETIRE' | 'SUPERSEDE';
+  previousState: unknown;
+  newState: unknown;
+  reason: string;
+  evidence: string[];
+  actorOrMethod: string;
+  affectedNodeIds: string[];
+}
+
+// ============================================================
+// WP4 APPLICABILITY ENVELOPE (§11)
+// ============================================================
+
+export interface WP4ApplicabilityEnvelope extends Timestamped {
+  entityId: string;
+  entityType: 'CONCEPT' | 'ANALOGY' | 'WORLD_MODEL';
+  validContexts: string[];
+  invalidContexts: string[];
+  requiredConditions: string[];
+  forbiddenConditions: string[];
+  knownCounterexamples: string[];
+  evidenceRequirements: string[];
+  uncertainty: Uncertainty[];
+  supportStatus: ApplicabilityStatus;
+  testedBoundaries: string[];
+  untestedBoundaries: string[];
+}
+
+export interface ApplicabilityCondition extends Timestamped {
+  envelopeId: string;
+  condition: string;
+  type: 'REQUIRED' | 'FORBIDDEN' | 'OPTIONAL';
+  evidence?: string[];
+}
+
+export interface ApplicabilityViolation extends Timestamped {
+  envelopeId: string;
+  context: string;
+  violatedConditions: string[];
+  missingConditions: string[];
+  counterexamples: string[];
+  status: ApplicabilityStatus;
+  reason: string;
+}
+
+// ============================================================
+// WP4 ANALOGICAL MAPPING (§12-15)
+// ============================================================
+
+export interface StructuralMapping extends Timestamped {
+  sourceId: string;
+  targetId: string;
+  entityCorrespondences: Array<{
+    source: string;
+    target: string;
+    relationType: string;
+  }>;
+  relationCorrespondences: Array<{
+    source: string;
+    target: string;
+    structuralSupport: number;
+  }>;
+}
+
+export interface AnalogicalMapping extends Timestamped {
+  mappingId: string;
+  sourceDomain: string;
+  targetDomain: string;
+  status: AnalogyStatus;
+  correspondences: Array<{
+    sourceElement: string;
+    targetElement: string;
+    relationType: string;
+    structuralSupport: number;
+    semanticCompatibility: number;
+    causalRoleCompatibility: number;
+    goalRelevance: number;
+    conflicts: string[];
+    uncertainty: Uncertainty[];
+    evidence: string[];
+  }>;
+  predictions: string[];
+  counterexamples: string[];
+  applicabilityEnvelopeId?: string;
+  caseId?: string;
+}
+
+export interface AnalogicalCorrespondence extends Timestamped {
+  mappingId: string;
+  sourceElement: string;
+  targetElement: string;
+  relationType: string;
+  structuralSupport: number;
+  semanticCompatibility: number;
+  causalRoleCompatibility: number;
+  goalRelevance: number;
+  conflicts: string[];
+  uncertainty: Uncertainty[];
+  evidence: string[];
+  status: 'SUPPORTED' | 'CONTESTED' | 'INVALIDATED' | 'UNKNOWN';
+}
+
+export interface AnalogicalPrediction extends Timestamped {
+  mappingId: string;
+  sourceRelation: string;
+  targetPrediction: string;
+  assumptions: string[];
+  uncertainty: Uncertainty[];
+  validationStatus: 'PREDICTED' | 'CONFIRMED' | 'REFUTED' | 'UNKNOWN';
+  requiredEvidence: string[];
+}
+
+export interface AnalogyValidation extends Timestamped {
+  mappingId: string;
+  structuralConsistency: boolean;
+  relationPreservation: boolean;
+  causalRoleCompatibility: boolean;
+  semanticCompatibility: boolean;
+  predictedConsequences: string[];
+  counterexamples: string[];
+  applicabilityCheck: ApplicabilityStatus;
+  overallStatus: AnalogyStatus;
+  evidence: string[];
+}
+
+// ============================================================
+// WP4 WORLD MODEL (§16-21)
+// ============================================================
+
+export interface WP4WorldObject extends Timestamped {
+  objectId: string;
+  name: string;
+  type: string;
+  properties: Record<string, unknown>;
+  relations: string[];
+  worldModelId: string;
+}
+
+export interface WorldAgent extends Timestamped {
+  agentId: string;
+  name: string;
+  capabilities: string[];
+  goals: string[];
+  constraints: string[];
+  worldModelId: string;
+}
+
+export interface WorldResource extends Timestamped {
+  resourceId: string;
+  name: string;
+  type: string;
+  quantity: number;
+  constraints: string[];
+  worldModelId: string;
+}
+
+export interface WorldConstraint extends Timestamped {
+  constraintId: string;
+  description: string;
+  type: 'HARD' | 'SOFT' | 'SAFETY' | 'RESOURCE';
+  expression: string;
+  worldModelId: string;
+}
+
+export interface WorldEvent extends Timestamped {
+  eventId: string;
+  name: string;
+  type: string;
+  preconditions: string[];
+  effects: string[];
+  worldModelId: string;
+}
+
+export interface WP4WorldState extends Timestamped {
+  stateId: string;
+  worldModelId: string;
+  timestamp: string;
+  variables: WP4StateVariable[];
+  objects: string[];
+  agents: string[];
+  resources: string[];
+  constraints: string[];
+  knownFacts: string[];
+  assumptions: string[];
+  uncertainties: Uncertainty[];
+  provenance: string[];
+}
+
+export interface WP4StateVariable extends Timestamped {
+  variableId: string;
+  name: string;
+  value: unknown;
+  status: StateVariableStatus;
+  type: string;
+  worldStateId: string;
+}
+
+export interface TransitionMechanism extends Timestamped {
+  mechanismId: string;
+  name: string;
+  preconditions: string[];
+  trigger: string;
+  stateChanges: Array<{
+    variable: string;
+    from: unknown;
+    to: unknown;
+  }>;
+  constraints: string[];
+  assumptions: string[];
+  uncertainty: Uncertainty[];
+  evidence: string[];
+  worldModelId: string;
+}
+
+export interface WorldModelPrediction extends Timestamped {
+  predictionId: string;
+  worldModelId: string;
+  inputStateId: string;
+  transitionId: string;
+  predictedStateId: string;
+  assumptions: string[];
+  uncertainties: Uncertainty[];
+  modelVersion: number;
+  applicabilityEnvelopeId?: string;
+  oodAssessment: OODStatus;
+  modelDisagreement?: string;
+  validationStatus: 'PREDICTED' | 'CONFIRMED' | 'REFUTED' | 'UNKNOWN';
+}
+
+export interface ModelDisagreement extends Timestamped {
+  disagreementId: string;
+  worldModelId: string;
+  stateId: string;
+  predictions: Array<{
+    mechanismId: string;
+    predictedValue: unknown;
+    uncertainty: Uncertainty[];
+  }>;
+  resolution: 'DISAGREEMENT' | 'RESOLVED' | 'UNKNOWN';
+  evidence?: string[];
+}
+
+export interface OODAssessment extends Timestamped {
+  assessmentId: string;
+  entityId: string;
+  entityType: string;
+  context: string;
+  status: OODStatus;
+  method: string;
+  evidence: string[];
+  reasoning: string;
+}
+
+// ============================================================
+// WP4 LOW-DATA TRANSFER (§22-26)
+// ============================================================
+
+export interface TransferExperiment extends Timestamped {
+  experimentId: string;
+  sourceScenarioFamily: 'EDUCATION' | 'PUBLIC_ADMINISTRATION' | 'AI_COMPLIANCE';
+  targetScenarioFamily: 'EDUCATION' | 'PUBLIC_ADMINISTRATION' | 'AI_COMPLIANCE';
+  sourceDataDescriptor: string;
+  targetDataDescriptor: string;
+  targetExampleBudget: number;
+  configuration: TransferConfigurationType;
+  baseline: string;
+  metrics: TransferMetric[];
+  safetyConstraints: string[];
+  explanationRequirements: string[];
+  randomSeed?: number;
+  systemVersion: string;
+  status: 'NOT_RUN' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'NOT_IMPLEMENTED';
+  caseId?: string;
+}
+
+export interface TransferConfiguration extends Timestamped {
+  configurationId: string;
+  type: TransferConfigurationType;
+  parameters: Record<string, unknown>;
+  description: string;
+}
+
+export interface TransferResult extends Timestamped {
+  experimentId: string;
+  taskPerformance: number | null;
+  safetyViolations: number;
+  explanationFidelity: number | null;
+  sampleEfficiency: number | null;
+  applicabilityViolations: number;
+  overallSuccess: 'SUCCESS' | 'FAILURE' | 'PARTIAL' | 'UNKNOWN';
+  notes: string;
+}
+
+export interface TransferMetric extends Timestamped {
+  name: string;
+  value: number | null;
+  unit: string;
+  status: 'MEASURED' | 'NOT_MEASURED' | 'UNKNOWN';
+}
+
+// ============================================================
+// WP4 MODEL CARD (§31)
+// ============================================================
+
+export interface WP4ModelCard extends Timestamped {
+  cardId: string;
+  purpose: string;
+  scope: string;
+  scenarioFamily: string[];
+  inputs: string[];
+  outputs: string[];
+  assumptions: string[];
+  limitations: string[];
+  applicabilityEnvelopeId?: string;
+  oodMethod: string;
+  validationStatus: 'VALIDATED' | 'PARTIALLY_VALIDATED' | 'NOT_VALIDATED' | 'UNKNOWN';
+  metricsExecuted: string[];
+  metricsNotExecuted: string[];
+  humanReviewRequirements: string[];
+  version: number;
+}
+
+// ============================================================
 // UTILITY TYPES
 // ============================================================
 

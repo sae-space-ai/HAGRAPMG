@@ -20,6 +20,16 @@ import {
   EvidenceSufficiencyAssessment, EvidenceConflict,
   ReasoningSession, ReasoningReview, CalibrationRecord,
   BenchmarkCase, BenchmarkRun, AblationConfiguration,
+  // WP4 entities
+  ConceptCandidate, ConceptCounterexample, ConceptRevision,
+  WP4AbstractionNode, WP4AbstractionEdge, AbstractionLattice, AbstractionOperation,
+  WP4ApplicabilityEnvelope,
+  AnalogicalMapping, AnalogicalCorrespondence, AnalogicalPrediction, AnalogyValidation,
+  WP4WorldObject, WorldAgent, WorldResource, WorldConstraint, WorldEvent,
+  WP4WorldState, WP4StateVariable, TransitionMechanism,
+  WorldModelPrediction, ModelDisagreement, OODAssessment,
+  TransferExperiment, TransferResult,
+  WP4ModelCard,
   createTimestamped, now, generateId
 } from './types.ts';
 
@@ -69,6 +79,35 @@ export class EvidenceGraphMemory {
   private benchmarkCases: Map<string, BenchmarkCase> = new Map();
   private benchmarkRuns: Map<string, BenchmarkRun> = new Map();
   private ablationConfigurations: Map<string, AblationConfiguration> = new Map();
+  
+  // WP4 entities
+  private conceptCandidates: Map<string, ConceptCandidate> = new Map();
+  private conceptCounterexamples: Map<string, ConceptCounterexample> = new Map();
+  private conceptRevisions: Map<string, ConceptRevision> = new Map();
+  private wp4AbstractionNodes: Map<string, WP4AbstractionNode> = new Map();
+  private wp4AbstractionEdges: Map<string, WP4AbstractionEdge> = new Map();
+  private abstractionLattices: Map<string, AbstractionLattice> = new Map();
+  private abstractionOperations: Map<string, AbstractionOperation> = new Map();
+  private wp4ApplicabilityEnvelopes: Map<string, WP4ApplicabilityEnvelope> = new Map();
+  private analogicalMappings: Map<string, AnalogicalMapping> = new Map();
+  private analogicalCorrespondences: Map<string, AnalogicalCorrespondence> = new Map();
+  private analogicalPredictions: Map<string, AnalogicalPrediction> = new Map();
+  private analogyValidations: Map<string, AnalogyValidation> = new Map();
+  private wp4WorldObjects: Map<string, WP4WorldObject> = new Map();
+  private worldAgents: Map<string, WorldAgent> = new Map();
+  private worldResources: Map<string, WorldResource> = new Map();
+  private worldConstraints: Map<string, WorldConstraint> = new Map();
+  private worldEvents: Map<string, WorldEvent> = new Map();
+  private wp4WorldStates: Map<string, WP4WorldState> = new Map();
+  private wp4StateVariables: Map<string, WP4StateVariable> = new Map();
+  private transitionMechanisms: Map<string, TransitionMechanism> = new Map();
+  private worldModelPredictions: Map<string, WorldModelPrediction> = new Map();
+  private modelDisagreements: Map<string, ModelDisagreement> = new Map();
+  private oodAssessments: Map<string, OODAssessment> = new Map();
+  private transferExperiments: Map<string, TransferExperiment> = new Map();
+  private transferResults: Map<string, TransferResult> = new Map();
+  private wp4ModelCards: Map<string, WP4ModelCard> = new Map();
+  
   private relations: GraphRelation[] = [];
   private stateHistory: CognitiveStateSnapshot[] = [];
   private changeRecords: ChangeRecord[] = [];
@@ -970,6 +1009,47 @@ export class EvidenceGraphMemory {
     return Array.from(this.ablationConfigurations.values());
   }
 
+  // ---- WP4 Entities ----
+  
+  // Concept Counterexamples
+  addConceptCounterexample(counterexample: ConceptCounterexample): void {
+    this.conceptCounterexamples.set(counterexample.id, counterexample);
+  }
+  
+  getConceptCounterexample(id: string): ConceptCounterexample | undefined {
+    return this.conceptCounterexamples.get(id);
+  }
+  
+  getAllConceptCounterexamples(): ConceptCounterexample[] {
+    return Array.from(this.conceptCounterexamples.values());
+  }
+  
+  // Concept Revisions
+  addConceptRevision(revision: ConceptRevision): void {
+    this.conceptRevisions.set(revision.id, revision);
+  }
+  
+  getConceptRevision(id: string): ConceptRevision | undefined {
+    return this.conceptRevisions.get(id);
+  }
+  
+  getAllConceptRevisions(): ConceptRevision[] {
+    return Array.from(this.conceptRevisions.values());
+  }
+  
+  // Abstraction Operations
+  addAbstractionOperation(operation: AbstractionOperation): void {
+    this.abstractionOperations.set(operation.id, operation);
+  }
+  
+  getAbstractionOperation(id: string): AbstractionOperation | undefined {
+    return this.abstractionOperations.get(id);
+  }
+  
+  getAllAbstractionOperations(): AbstractionOperation[] {
+    return Array.from(this.abstractionOperations.values());
+  }
+
   // ---- Clear ----
   clear(): void {
     this.sources.clear();
@@ -1003,6 +1083,33 @@ export class EvidenceGraphMemory {
     this.benchmarkCases.clear();
     this.benchmarkRuns.clear();
     this.ablationConfigurations.clear();
+    // WP4 entities
+    this.conceptCandidates.clear();
+    this.conceptCounterexamples.clear();
+    this.conceptRevisions.clear();
+    this.wp4AbstractionNodes.clear();
+    this.wp4AbstractionEdges.clear();
+    this.abstractionLattices.clear();
+    this.abstractionOperations.clear();
+    this.wp4ApplicabilityEnvelopes.clear();
+    this.analogicalMappings.clear();
+    this.analogicalCorrespondences.clear();
+    this.analogicalPredictions.clear();
+    this.analogyValidations.clear();
+    this.wp4WorldObjects.clear();
+    this.worldAgents.clear();
+    this.worldResources.clear();
+    this.worldConstraints.clear();
+    this.worldEvents.clear();
+    this.wp4WorldStates.clear();
+    this.wp4StateVariables.clear();
+    this.transitionMechanisms.clear();
+    this.worldModelPredictions.clear();
+    this.modelDisagreements.clear();
+    this.oodAssessments.clear();
+    this.transferExperiments.clear();
+    this.transferResults.clear();
+    this.wp4ModelCards.clear();
     this.relations = [];
     this.stateHistory = [];
     this.changeRecords = [];
