@@ -22,7 +22,7 @@ import {
   WP4ApplicabilityEnvelope, ApplicabilityCondition, ApplicabilityViolation,
   AnalogicalMapping, AnalogicalCorrespondence, AnalogicalPrediction, AnalogyValidation,
   WP4WorldObject, WorldAgent, WorldResource, WorldConstraint, WorldEvent,
-  WP4WorldState, WP4StateVariable, TransitionMechanism,
+  WP4WorldState, WP4StateVariable, WP4TransitionMechanism,
   WorldModelPrediction, ModelDisagreement, OODAssessment,
   TransferExperiment, TransferResult, TransferMetric,
   WP4ModelCard,
@@ -590,14 +590,14 @@ export class WorldModelEngine {
    */
   applyTransition(
     currentState: WP4WorldState,
-    mechanism: TransitionMechanism
+    mechanism: WP4TransitionMechanism
   ): {
     predictedState: WP4WorldState;
     violatedConstraints: string[];
     unknownEffects: string[];
   } {
     // Check preconditions
-    const preconditionsMet = mechanism.preconditions.every(p => 
+    const preconditionsMet = mechanism.preconditions.every((p: string) => 
       currentState.knownFacts.includes(p) || 
       currentState.variables.some(v => v.value === p)
     );
@@ -641,7 +641,7 @@ export class WorldModelEngine {
     };
 
     // Check constraints
-    const violatedConstraints = mechanism.constraints.filter(c => 
+    const violatedConstraints = mechanism.constraints.filter((c: string) => 
       !predictedState.constraints.includes(c)
     );
 

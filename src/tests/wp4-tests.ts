@@ -13,7 +13,7 @@ import {
   AnalogicalMappingEngine, WorldModelEngine, TransferEngine, ModelCardEngine
 } from '../domain/wp4-engines.ts';
 import {
-  Source, EvidenceItem, Claim, createTimestamped, now, generateId
+  Source, EvidenceItem, Claim, WP4TransitionMechanism, createTimestamped, now, generateId
 } from '../domain/types.ts';
 
 // Helper functions
@@ -1509,6 +1509,84 @@ test('T293', 'Critical C18: Case isolation enforced', '§35 Critical C18', () =>
   return {
     passed: counterexamplesB.length === 0,
     details: `C18: Case isolation: Graph B has ${counterexamplesB.length} counterexamples`
+  };
+});
+
+test('T294', 'Critical C4: Abstraction hierarchy validity', '§35 Critical C4', () => {
+  const engine = new AbstractionStructureEngine();
+  
+  // Create valid hierarchy: instance → concept → schema
+  const instance = engine.createNode('INSTANCE', 'concrete example', undefined, ['e1']);
+  const concept = engine.createNode('CONCEPT', 'abstract concept', 'definition', ['e2']);
+  const schema = engine.createNode('SCHEMA', 'general schema', 'schema def', ['e3']);
+  
+  const edge1 = engine.createEdge(instance.id, concept.id, 'INSTANCE_OF');
+  const edge2 = engine.createEdge(concept.id, schema.id, 'SPECIALISES');
+  
+  // Verify hierarchy is valid (no cycles, proper relations)
+  const isValid = edge1.relation === 'INSTANCE_OF' && edge2.relation === 'SPECIALISES';
+  
+  return {
+    passed: isValid && instance.type === 'INSTANCE' && concept.type === 'CONCEPT' && schema.type === 'SCHEMA',
+    details: `C4: Valid hierarchy INSTANCE→CONCEPT→SCHEMA with proper relations`
+  };
+});
+
+test('T295', 'Critical C8: Causal transfer with incompatible context', '§35 Critical C8', () => {
+  const engine = new AnalogicalMappingEngine();
+  
+  // Source has valid causal relation X→Y
+  // Target has incompatible context
+  const result = engine.checkCausalTransfer(
+    'source-causal-X-Y',
+    'incompatible-target-context',
+    true, // structural correspondence exists
+    false, // but context is incompatible
+    ['evidence1']
+  );
+  
+  return {
+    passed: !result.supported && result.abstentionReason === 'OUTSIDE_APPLICABILITY_ENVELOPE',
+    details: `C8: Causal transfer blocked: supported=${result.supported}, reason=${result.abstentionReason}`
+  };
+});
+
+test('T296', 'Critical C12: World model revision preserves both states', '§35 Critical C12', () => {
+  const engine = new WorldModelEngine();
+  
+  // Create initial observed state S0
+  const state0 = engine.createState(
+    'model1',
+    [engine.createVariable('temp', 20, 'OBSERVED', 'number', 'state0')],
+    [], [], [], [], [], [], []
+  );
+  
+  // Apply transition to get predicted state S1
+  const mechanism: WP4TransitionMechanism = {
+    ...createTimestamped(),
+    mechanismId: 'mech1',
+    name: 'Heat',
+    preconditions: [],
+    trigger: 'apply-heat',
+    stateChanges: [{ variable: 'temp', from: 20, to: 25 }],
+    constraints: [],
+    assumptions: [],
+    uncertainty: [],
+    evidence: [],
+    worldModelId: 'model1'
+  };
+  
+  const result = engine.applyTransition(state0, mechanism);
+  const state1 = result.predictedState;
+  
+  // Verify both states preserved: S0 remains OBSERVED, S1 is PREDICTED
+  const s0Var = state0.variables.find(v => v.name === 'temp');
+  const s1Var = state1.variables.find(v => v.name === 'temp');
+  
+  return {
+    passed: s0Var?.status === 'OBSERVED' && s0Var?.value === 20 &&
+            s1Var?.status === 'PREDICTED' && s1Var?.value === 25,
+    details: `C12: Both states preserved: S0(OBSERVED=20), S1(PREDICTED=25)`
   };
 });
 

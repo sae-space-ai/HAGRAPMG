@@ -1577,7 +1577,7 @@ export interface WP4StateVariable extends Timestamped {
   worldStateId: string;
 }
 
-export interface TransitionMechanism extends Timestamped {
+export interface WP4TransitionMechanism extends Timestamped {
   mechanismId: string;
   name: string;
   preconditions: string[];
