@@ -49,10 +49,10 @@
   --unknown-neutral: #e0e4e8;
   
   /* Text Colors - High Contrast for Readability */
-  --text-primary: #1a2332;
-  --text-secondary: #3d4f60;
-  --text-tertiary: #5a6c7d;
-  --text-muted: #7a8a98;
+  --text-primary: #0f1419;
+  --text-secondary: #2c3e50;
+  --text-tertiary: #4a5f73;
+  --text-muted: #6b7d8f;
   
   /* Borders & Dividers */
   --border-light: #e8edf2;
