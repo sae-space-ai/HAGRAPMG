@@ -14,6 +14,12 @@ import {
   JustificationGraph, JustificationNode, JustificationEdge,
   CognitiveStateSnapshot, ChangeRecord, ChangeDetail,
   Uncertainty,
+  // WP3 entities
+  CausalVariable, CausalRelation, CausalModel,
+  ProofTrace, ExplanationGraph,
+  EvidenceSufficiencyAssessment, EvidenceConflict,
+  ReasoningSession, ReasoningReview, CalibrationRecord,
+  BenchmarkCase, BenchmarkRun, AblationConfiguration,
   createTimestamped, now, generateId
 } from './types.ts';
 
@@ -48,6 +54,21 @@ export class EvidenceGraphMemory {
   private goals: Map<string, Goal> = new Map();
   private constraints: Map<string, Constraint> = new Map();
   private interventions: Map<string, HumanIntervention> = new Map();
+  
+  // WP3 entities
+  private causalVariables: Map<string, CausalVariable> = new Map();
+  private causalRelations: Map<string, CausalRelation> = new Map();
+  private causalModels: Map<string, CausalModel> = new Map();
+  private proofTraces: Map<string, ProofTrace> = new Map();
+  private explanationGraphs: Map<string, ExplanationGraph> = new Map();
+  private sufficiencyAssessments: Map<string, EvidenceSufficiencyAssessment> = new Map();
+  private evidenceConflicts: Map<string, EvidenceConflict> = new Map();
+  private reasoningSessions: Map<string, ReasoningSession> = new Map();
+  private reasoningReviews: Map<string, ReasoningReview> = new Map();
+  private calibrationRecords: Map<string, CalibrationRecord> = new Map();
+  private benchmarkCases: Map<string, BenchmarkCase> = new Map();
+  private benchmarkRuns: Map<string, BenchmarkRun> = new Map();
+  private ablationConfigurations: Map<string, AblationConfiguration> = new Map();
   private relations: GraphRelation[] = [];
   private stateHistory: CognitiveStateSnapshot[] = [];
   private changeRecords: ChangeRecord[] = [];
@@ -774,6 +795,181 @@ export class EvidenceGraphMemory {
     return { success: true, errors: [] };
   }
 
+  // ---- WP3 Entity Management ----
+  
+  // Causal Variables
+  addCausalVariable(variable: CausalVariable): void {
+    this.causalVariables.set(variable.id, variable);
+  }
+  
+  getCausalVariable(id: string): CausalVariable | undefined {
+    return this.causalVariables.get(id);
+  }
+  
+  getAllCausalVariables(): CausalVariable[] {
+    return Array.from(this.causalVariables.values());
+  }
+  
+  // Causal Relations
+  addCausalRelation(relation: CausalRelation): void {
+    this.causalRelations.set(relation.id, relation);
+  }
+  
+  getCausalRelation(id: string): CausalRelation | undefined {
+    return this.causalRelations.get(id);
+  }
+  
+  getAllCausalRelations(): CausalRelation[] {
+    return Array.from(this.causalRelations.values());
+  }
+  
+  // Causal Models
+  addCausalModel(model: CausalModel): void {
+    this.causalModels.set(model.id, model);
+  }
+  
+  getCausalModel(id: string): CausalModel | undefined {
+    return this.causalModels.get(id);
+  }
+  
+  getAllCausalModels(): CausalModel[] {
+    return Array.from(this.causalModels.values());
+  }
+  
+  // Proof Traces
+  addProofTrace(trace: ProofTrace): void {
+    this.proofTraces.set(trace.id, trace);
+  }
+  
+  getProofTrace(id: string): ProofTrace | undefined {
+    return this.proofTraces.get(id);
+  }
+  
+  getAllProofTraces(): ProofTrace[] {
+    return Array.from(this.proofTraces.values());
+  }
+  
+  getProofTraceForClaim(claimId: string): ProofTrace | undefined {
+    return Array.from(this.proofTraces.values()).find(pt => pt.conclusionClaimId === claimId);
+  }
+  
+  // Explanation Graphs
+  addExplanationGraph(graph: ExplanationGraph): void {
+    this.explanationGraphs.set(graph.id, graph);
+  }
+  
+  getExplanationGraph(id: string): ExplanationGraph | undefined {
+    return this.explanationGraphs.get(id);
+  }
+  
+  getAllExplanationGraphs(): ExplanationGraph[] {
+    return Array.from(this.explanationGraphs.values());
+  }
+  
+  // Sufficiency Assessments
+  addSufficiencyAssessment(assessment: EvidenceSufficiencyAssessment): void {
+    this.sufficiencyAssessments.set(assessment.id, assessment);
+  }
+  
+  getSufficiencyAssessment(id: string): EvidenceSufficiencyAssessment | undefined {
+    return this.sufficiencyAssessments.get(id);
+  }
+  
+  getAllSufficiencyAssessments(): EvidenceSufficiencyAssessment[] {
+    return Array.from(this.sufficiencyAssessments.values());
+  }
+  
+  // Evidence Conflicts
+  addEvidenceConflict(conflict: EvidenceConflict): void {
+    this.evidenceConflicts.set(conflict.id, conflict);
+  }
+  
+  getEvidenceConflict(id: string): EvidenceConflict | undefined {
+    return this.evidenceConflicts.get(id);
+  }
+  
+  getAllEvidenceConflicts(): EvidenceConflict[] {
+    return Array.from(this.evidenceConflicts.values());
+  }
+  
+  // Reasoning Sessions
+  addReasoningSession(session: ReasoningSession): void {
+    this.reasoningSessions.set(session.id, session);
+  }
+  
+  getReasoningSession(id: string): ReasoningSession | undefined {
+    return this.reasoningSessions.get(id);
+  }
+  
+  getAllReasoningSessions(): ReasoningSession[] {
+    return Array.from(this.reasoningSessions.values());
+  }
+  
+  // Reasoning Reviews
+  addReasoningReview(review: ReasoningReview): void {
+    this.reasoningReviews.set(review.id, review);
+  }
+  
+  getReasoningReview(id: string): ReasoningReview | undefined {
+    return this.reasoningReviews.get(id);
+  }
+  
+  getAllReasoningReviews(): ReasoningReview[] {
+    return Array.from(this.reasoningReviews.values());
+  }
+  
+  // Calibration Records
+  addCalibrationRecord(record: CalibrationRecord): void {
+    this.calibrationRecords.set(record.id, record);
+  }
+  
+  getCalibrationRecord(id: string): CalibrationRecord | undefined {
+    return this.calibrationRecords.get(id);
+  }
+  
+  getAllCalibrationRecords(): CalibrationRecord[] {
+    return Array.from(this.calibrationRecords.values());
+  }
+  
+  // Benchmark Cases
+  addBenchmarkCase(bCase: BenchmarkCase): void {
+    this.benchmarkCases.set(bCase.id, bCase);
+  }
+  
+  getBenchmarkCase(id: string): BenchmarkCase | undefined {
+    return this.benchmarkCases.get(id);
+  }
+  
+  getAllBenchmarkCases(): BenchmarkCase[] {
+    return Array.from(this.benchmarkCases.values());
+  }
+  
+  // Benchmark Runs
+  addBenchmarkRun(run: BenchmarkRun): void {
+    this.benchmarkRuns.set(run.id, run);
+  }
+  
+  getBenchmarkRun(id: string): BenchmarkRun | undefined {
+    return this.benchmarkRuns.get(id);
+  }
+  
+  getAllBenchmarkRuns(): BenchmarkRun[] {
+    return Array.from(this.benchmarkRuns.values());
+  }
+  
+  // Ablation Configurations
+  addAblationConfiguration(config: AblationConfiguration): void {
+    this.ablationConfigurations.set(config.id, config);
+  }
+  
+  getAblationConfiguration(id: string): AblationConfiguration | undefined {
+    return this.ablationConfigurations.get(id);
+  }
+  
+  getAllAblationConfigurations(): AblationConfiguration[] {
+    return Array.from(this.ablationConfigurations.values());
+  }
+
   // ---- Clear ----
   clear(): void {
     this.sources.clear();
@@ -793,6 +989,20 @@ export class EvidenceGraphMemory {
     this.goals.clear();
     this.constraints.clear();
     this.interventions.clear();
+    // WP3 entities
+    this.causalVariables.clear();
+    this.causalRelations.clear();
+    this.causalModels.clear();
+    this.proofTraces.clear();
+    this.explanationGraphs.clear();
+    this.sufficiencyAssessments.clear();
+    this.evidenceConflicts.clear();
+    this.reasoningSessions.clear();
+    this.reasoningReviews.clear();
+    this.calibrationRecords.clear();
+    this.benchmarkCases.clear();
+    this.benchmarkRuns.clear();
+    this.ablationConfigurations.clear();
     this.relations = [];
     this.stateHistory = [];
     this.changeRecords = [];

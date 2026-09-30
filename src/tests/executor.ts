@@ -5,6 +5,7 @@
 
 import { runAllTests, type TestSuite } from './framework.ts';
 import './all-tests.ts';
+import './wp3-tests.ts';
 
 export type { TestSuite };
 

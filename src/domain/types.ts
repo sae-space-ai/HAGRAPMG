@@ -124,6 +124,120 @@ export type FailureClass =
   | 'INFRASTRUCTURE';
 
 // ============================================================
+// WP3 DOMAIN EXTENSIONS (§3)
+// ============================================================
+
+export type InferenceFamily =
+  | 'DEDUCTIVE'
+  | 'INDUCTIVE'
+  | 'ABDUCTIVE'
+  | 'DEFEASIBLE'
+  | 'CAUSAL';
+
+export type CausalRelationStatus =
+  | 'HYPOTHESIZED'
+  | 'SUPPORTED'
+  | 'CONTESTED'
+  | 'REJECTED'
+  | 'UNKNOWN';
+
+export type CausalRelationKind =
+  | 'CAUSES'
+  | 'ENABLES'
+  | 'PREVENTS'
+  | 'MODERATES'
+  | 'MEDIATES'
+  | 'CONFOUNDS'
+  | 'UNKNOWN';
+
+export type IdentifiabilityStatus =
+  | 'IDENTIFIABLE'
+  | 'PARTIALLY_IDENTIFIABLE'
+  | 'NOT_IDENTIFIABLE'
+  | 'UNKNOWN';
+
+export type SufficiencyStatus =
+  | 'SUFFICIENT_FOR_BOUNDED_INFERENCE'
+  | 'INSUFFICIENT'
+  | 'CONFLICTED'
+  | 'REQUIRES_HUMAN_REVIEW'
+  | 'UNKNOWN';
+
+export type ConflictCategory =
+  | 'SOURCE_CONFLICT'
+  | 'TEMPORAL_CONFLICT'
+  | 'DEFINITION_CONFLICT'
+  | 'LOGICAL_CONFLICT'
+  | 'CAUSAL_CONFLICT'
+  | 'MODEL_CONFLICT'
+  | 'UNKNOWN';
+
+export type ConflictResolutionStatus =
+  | 'RESOLVED'
+  | 'PARTIALLY_RESOLVED'
+  | 'UNRESOLVED'
+  | 'REQUIRES_MORE_EVIDENCE'
+  | 'REQUIRES_HUMAN_REVIEW';
+
+export type ReasoningFailureType =
+  | 'MISSING_PREMISE'
+  | 'INVALID_RULE'
+  | 'CIRCULAR_REASONING'
+  | 'CONTRADICTION'
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'CAUSAL_NON_IDENTIFIABILITY'
+  | 'OUT_OF_SCOPE'
+  | 'UNSUPPORTED_ASSUMPTION'
+  | 'NUMERICAL_ERROR'
+  | 'UNKNOWN';
+
+export type AbstentionReason =
+  | 'INSUFFICIENT_EVIDENCE'
+  | 'INCONCLUSIVE'
+  | 'UNRESOLVED_CONFLICT'
+  | 'NOT_IDENTIFIABLE'
+  | 'OUTSIDE_SUPPORTED_SCOPE';
+
+export type ProofNodeType =
+  | 'EVIDENCE'
+  | 'CLAIM'
+  | 'ASSUMPTION'
+  | 'RULE'
+  | 'INFERENCE'
+  | 'CAUSAL_RELATION'
+  | 'UNCERTAINTY'
+  | 'CONTRADICTION'
+  | 'CONCLUSION'
+  | 'HUMAN_INTERVENTION';
+
+export type ExplanationNodeType =
+  | 'SOURCE'
+  | 'EVIDENCE'
+  | 'CLAIM'
+  | 'ASSUMPTION'
+  | 'RULE'
+  | 'INFERENCE'
+  | 'CAUSAL_RELATION'
+  | 'UNCERTAINTY'
+  | 'CONTRADICTION'
+  | 'CONCLUSION'
+  | 'HUMAN_INTERVENTION';
+
+export type HumanReviewAction =
+  | 'CHALLENGE_INFERENCE'
+  | 'CHALLENGE_CAUSAL_ASSUMPTION'
+  | 'REQUEST_EVIDENCE'
+  | 'REQUEST_COUNTERFACTUAL'
+  | 'CORRECT_PREMISE'
+  | 'REJECT_CONCLUSION_FOR_RESEARCH'
+  | 'ACCEPT_CONCLUSION_FOR_RESEARCH';
+
+export type BaselineClass =
+  | 'RULE_ONLY'
+  | 'HEURISTIC'
+  | 'HYBRID';
+
+// ============================================================
 // CORE DOMAIN ENTITIES (§5)
 // ============================================================
 
@@ -573,14 +687,7 @@ export interface ResourceAccount extends Timestamped {
 // EXPERIMENTS (§38, 41-47)
 // ============================================================
 
-export interface BenchmarkCase extends Timestamped {
-  name: string;
-  description: string;
-  category: string;
-  input: unknown;
-  expectedOutput?: unknown;
-  isSynthetic: boolean;
-}
+// Note: BenchmarkCase is defined in WP3 section below with updated structure
 
 export interface BenchmarkRun extends Timestamped {
   caseId: string;
@@ -754,6 +861,295 @@ export interface ResearchObjective {
   targetValue: string;
   status: 'TARGET' | 'IN_PROGRESS' | 'NOT_YET_MEASURED';
   measuredResult?: string;
+}
+
+// ============================================================
+// WP3 DOMAIN ENTITIES (§3)
+// ============================================================
+
+export interface InferencePremise extends Timestamped {
+  claimId: string;
+  role: 'SUPPORTING' | 'REQUIRED' | 'CONTEXTUAL';
+  weight: number; // 0-1
+  verificationStatus: VerificationStatus;
+}
+
+export interface InferenceResult extends Timestamped {
+  inferenceId: string;
+  conclusionClaimId: string;
+  family: InferenceFamily;
+  status: ClaimStatus;
+  confidence: number | null; // null if not calibrated
+  uncertainty: Uncertainty[];
+  failures: ReasoningFailure[];
+  proofTraceId?: string;
+}
+
+export interface InferenceAlternative extends Timestamped {
+  inferenceId: string;
+  alternativeConclusion: string;
+  supportScore: number; // 0-1
+  rankingRationale: string;
+  missingEvidence: string[];
+  contradictions: string[];
+}
+
+export interface ReasoningSession extends Timestamped {
+  caseId: string;
+  goalDescription: string;
+  steps: ReasoningStep[];
+  finalConclusionId?: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'ABSTAINED';
+  abstentionReason?: AbstentionReason;
+  version: number;
+}
+
+export interface ReasoningStep extends Timestamped {
+  sessionId: string;
+  order: number;
+  family: InferenceFamily;
+  inputClaimIds: string[];
+  outputClaimId?: string;
+  ruleId?: string;
+  assumptions: string[];
+  result: 'SUCCESS' | 'FAILURE' | 'ABSTAINED';
+  failureType?: ReasoningFailureType;
+  failureDetails?: string;
+}
+
+export interface ReasoningFailure extends Timestamped {
+  type: ReasoningFailureType;
+  description: string;
+  affectedClaimIds: string[];
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  recoverable: boolean;
+}
+
+// ============================================================
+// WP3 CAUSAL ENTITIES (§12-16)
+// ============================================================
+
+export interface CausalVariable extends Timestamped {
+  name: string;
+  type: 'OBSERVED' | 'INTERVENED' | 'LATENT' | 'OUTCOME';
+  description: string;
+  evidenceIds: string[];
+  measurementMethod?: string;
+}
+
+export interface CausalRelation extends Timestamped {
+  sourceVariableId: string;
+  targetVariableId: string;
+  kind: CausalRelationKind;
+  status: CausalRelationStatus;
+  direction: 'POSITIVE' | 'NEGATIVE' | 'NON_MONOTONIC' | 'UNKNOWN';
+  supportingEvidenceIds: string[];
+  contradictingEvidenceIds: string[];
+  assumptions: string[];
+  confounders: string[];
+  uncertainty: Uncertainty[];
+  contextId?: string;
+  validityConditions: string[];
+  knownLimitations: string[];
+}
+
+export interface CausalModel extends Timestamped {
+  name: string;
+  description: string;
+  variableIds: string[];
+  relationIds: string[];
+  contextId: string;
+  assumptions: string[];
+  identifiabilityStatus: IdentifiabilityStatus;
+  version: number;
+}
+
+export interface Intervention extends Timestamped {
+  variableId: string;
+  fromValue: unknown;
+  toValue: unknown;
+  description: string;
+  feasibility: 'FEASIBLE' | 'THEORETICAL' | 'INFEASIBLE' | 'UNKNOWN';
+}
+
+export interface CounterfactualResult extends Timestamped {
+  queryId: string;
+  observedFacts: string[];
+  intervention: string;
+  expectedOutcome: string;
+  causalAssumptions: string[];
+  modelAssumptions: string[];
+  unknownVariables: string[];
+  confounders: string[];
+  result: string;
+  uncertainty: Uncertainty[];
+  identifiability: IdentifiabilityStatus;
+  status: 'CONCLUSIVE' | 'INCONCLUSIVE' | 'NOT_IDENTIFIABLE';
+}
+
+// ============================================================
+// WP3 CONFLICT & SUFFICIENCY (§17-20)
+// ============================================================
+
+export interface EvidenceConflict extends Timestamped {
+  category: ConflictCategory;
+  claimIds: string[];
+  evidenceIds: string[];
+  description: string;
+  resolutionStatus: ConflictResolutionStatus;
+  resolutionMethod?: string;
+  remainingUncertainty: Uncertainty[];
+  requiresHumanReview: boolean;
+}
+
+export interface EvidenceSufficiencyAssessment extends Timestamped {
+  targetClaimId: string;
+  status: SufficiencyStatus;
+  dimensions: {
+    coverage: number; // 0-1
+    provenance: number; // 0-1
+    independence: number; // 0-1
+    recency: number; // 0-1
+    reliability: number; // 0-1
+  };
+  missingEvidence: string[];
+  unresolvedContradictions: string[];
+  criticalAssumptions: string[];
+  causalIdentifiability: IdentifiabilityStatus;
+  counterexamples: string[];
+  recommendation: string;
+}
+
+// ============================================================
+// WP3 PROOF & EXPLANATION (§23-24)
+// ============================================================
+
+export interface ProofTrace extends Timestamped {
+  conclusionClaimId: string;
+  nodes: ProofNode[];
+  edges: ProofEdge[];
+  family: InferenceFamily;
+  validity: 'VALID' | 'INVALID' | 'INCOMPLETE' | 'CIRCULAR';
+  failures: ReasoningFailure[];
+  humanInterventions: string[];
+  machineReadable: boolean;
+}
+
+export interface ProofNode {
+  id: string;
+  type: ProofNodeType;
+  content: string;
+  entityId?: string;
+  status: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ProofEdge {
+  id: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  relation: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ExplanationGraph extends Timestamped {
+  conclusionClaimId: string;
+  nodes: ExplanationNode[];
+  edges: ExplanationEdge[];
+  naturalLanguageSummary: string;
+  completeness: number; // 0-1
+  hasContradictions: boolean;
+  hasUnresolvedUncertainty: boolean;
+}
+
+export interface ExplanationNode {
+  id: string;
+  type: ExplanationNodeType;
+  content: string;
+  entityId?: string;
+  status: string;
+}
+
+export interface ExplanationEdge {
+  id: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  relation: string;
+}
+
+// ============================================================
+// WP3 CALIBRATION & REVIEW (§22, 28-29)
+// ============================================================
+
+export interface CalibrationRecord extends Timestamped {
+  prediction: string;
+  predictedConfidence: number | null;
+  observedOutcome: string | null;
+  calibrationBin?: number;
+  error: number | null;
+  method: string;
+  datasetId?: string;
+  experimentId?: string;
+  status: 'NOT_CALIBRATED' | 'CALIBRATED' | 'PARTIALLY_CALIBRATED';
+}
+
+export interface ReasoningReview extends Timestamped {
+  inferenceId: string;
+  reviewerId: string;
+  action: HumanReviewAction;
+  rationale: string;
+  corrections?: string[];
+  affectedInferenceIds: string[];
+  timestamp: string;
+}
+
+// ============================================================
+// WP3 BENCHMARK INFRASTRUCTURE (§39-42)
+// ============================================================
+
+export interface BenchmarkCase extends Timestamped {
+  family: string;
+  task: string;
+  groundTruth: unknown;
+  evidence: string[];
+  expectedReasoningProperties: Record<string, unknown>;
+  expectedConclusion?: string;
+  allowedAbstention: boolean;
+  adversarialFeatures: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface BenchmarkRun extends Timestamped {
+  benchmarkCaseId: string;
+  engineVersion: string;
+  configuration: Record<string, unknown>;
+  result: unknown;
+  proofTraceId?: string;
+  metrics: Record<string, number>;
+  status: 'NOT_RUN' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  duration?: number;
+}
+
+export interface AblationConfiguration extends Timestamped {
+  name: string;
+  disabledComponents: string[];
+  description: string;
+}
+
+// ============================================================
+// WP3 CLAIM EXTRACTION (§34)
+// ============================================================
+
+export interface ClaimExtraction {
+  inputType: 'TEXT' | 'TABLE' | 'IMAGE' | 'STRUCTURED_RECORD' | 'OTHER';
+  sourceId: string;
+  extractedClaims: Array<{
+    content: string;
+    confidence: number | null;
+    evidenceSpan?: string;
+  }>;
+  method: string;
+  timestamp: string;
 }
 
 // ============================================================

@@ -7,11 +7,12 @@ import { runAllTests } from '../src/tests/framework.ts';
 
 // Import all tests (they register themselves)
 import '../src/tests/all-tests.ts';
+import '../src/tests/wp3-tests.ts';
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║  HAG-RAP LAB — Complete Test Suite T001-T060               ║');
-  console.log('║  Scientific Research Demonstrator — Verification           ║');
+  console.log('║  HAG-RAP LAB — Complete Test Suite T001-T140               ║');
+  console.log('║  WP2 + WP3 Scientific Research Demonstrator                ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
   console.log('');
   
