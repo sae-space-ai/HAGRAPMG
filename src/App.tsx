@@ -34,47 +34,65 @@ interface AppState {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    'IMPLEMENTED': 'bg-green-900/50 text-green-300 border-green-700',
-    'EXPERIMENTAL': 'bg-yellow-900/50 text-yellow-300 border-yellow-700',
-    'VERIFIED': 'bg-green-900/50 text-green-300 border-green-700',
-    'PASSED': 'bg-green-900/50 text-green-300 border-green-700',
-    'FAILED': 'bg-red-900/50 text-red-300 border-red-700',
-    'INCONCLUSIVE': 'bg-orange-900/50 text-orange-300 border-orange-700',
-    'NOT_CHECKED': 'bg-gray-800/50 text-gray-400 border-gray-600',
-    'NOT_APPLICABLE': 'bg-gray-800/50 text-gray-400 border-gray-600',
-    'OBSERVED': 'bg-blue-900/50 text-blue-300 border-blue-700',
-    'INFERRED': 'bg-purple-900/50 text-purple-300 border-purple-700',
-    'ASSUMED': 'bg-amber-900/50 text-amber-300 border-amber-700',
-    'CONTESTED': 'bg-red-900/50 text-red-300 border-red-700',
-    'SUPERSEDED': 'bg-gray-700/50 text-gray-300 border-gray-500',
-    'UNKNOWN': 'bg-gray-800/50 text-gray-400 border-gray-600',
-    'AVAILABLE': 'bg-green-900/50 text-green-300 border-green-700',
-    'MISSING': 'bg-red-900/50 text-red-300 border-red-700',
-    'CONFLICTED': 'bg-orange-900/50 text-orange-300 border-orange-700',
-    'UNVERIFIED': 'bg-yellow-900/50 text-yellow-300 border-yellow-700',
-    'ACTIVE': 'bg-blue-900/50 text-blue-300 border-blue-700',
-    'TRIGGERED': 'bg-orange-900/50 text-orange-300 border-orange-700',
-    'VIOLATED': 'bg-red-900/50 text-red-300 border-red-700',
-    'COMPLETED': 'bg-green-900/50 text-green-300 border-green-700',
-    'DRAFT': 'bg-gray-800/50 text-gray-400 border-gray-600',
-    'EVALUATED': 'bg-blue-900/50 text-blue-300 border-blue-700',
-    'SELECTED': 'bg-green-900/50 text-green-300 border-green-700',
-    'STOPPED': 'bg-red-900/50 text-red-300 border-red-700',
-    'TARGET': 'bg-blue-900/50 text-blue-300 border-blue-700',
-    'NOT_YET_MEASURED': 'bg-gray-800/50 text-gray-400 border-gray-600',
-    'IN_PROGRESS': 'bg-yellow-900/50 text-yellow-300 border-yellow-700',
-    'CANDIDATE_CAUSE': 'bg-yellow-900/50 text-yellow-300 border-yellow-700',
-    'CORRELATION': 'bg-gray-700/50 text-gray-300 border-gray-500',
-    'MINOR': 'bg-yellow-900/50 text-yellow-300 border-yellow-700',
-    'MAJOR': 'bg-orange-900/50 text-orange-300 border-orange-700',
-    'SAFETY_CRITICAL': 'bg-red-900/50 text-red-300 border-red-700',
-    'ACCEPTED': 'bg-green-900/50 text-green-300 border-green-700',
-    'REJECTED': 'bg-red-900/50 text-red-300 border-red-700',
-    'CORRECTED': 'bg-blue-900/50 text-blue-300 border-blue-700',
-    'OVERRIDDEN': 'bg-purple-900/50 text-purple-300 border-purple-700',
-    'PENDING': 'bg-gray-800/50 text-gray-400 border-gray-600',
+    // Success states
+    'IMPLEMENTED': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    'VERIFIED': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    'PASSED': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    'COMPLETED': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    'AVAILABLE': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    'SELECTED': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    'ACCEPTED': 'bg-[#b8e8c5] text-[#2d5a3a] border-[#a8d4b8]',
+    
+    // Experimental/In progress
+    'EXPERIMENTAL': 'bg-[#f5e6c8] text-[#5a4a2d] border-[#d4c4a8]',
+    'IN_PROGRESS': 'bg-[#f5e6c8] text-[#5a4a2d] border-[#d4c4a8]',
+    'UNVERIFIED': 'bg-[#f5e6c8] text-[#5a4a2d] border-[#d4c4a8]',
+    'CANDIDATE_CAUSE': 'bg-[#f5e6c8] text-[#5a4a2d] border-[#d4c4a8]',
+    
+    // Warning/Issue states
+    'FAILED': 'bg-[#f5d4c8] text-[#5a3a2d] border-[#d4b8a8]',
+    'VIOLATED': 'bg-[#f5d4c8] text-[#5a3a2d] border-[#d4b8a8]',
+    'STOPPED': 'bg-[#f5d4c8] text-[#5a3a2d] border-[#d4b8a8]',
+    'REJECTED': 'bg-[#f5d4c8] text-[#5a3a2d] border-[#d4b8a8]',
+    'MISSING': 'bg-[#f5d4c8] text-[#5a3a2d] border-[#d4b8a8]',
+    
+    // Inconclusive/Conflict
+    'INCONCLUSIVE': 'bg-[#e8b8c5] text-[#5a2d3a] border-[#d4a8b8]',
+    'CONFLICTED': 'bg-[#e8b8c5] text-[#5a2d3a] border-[#d4a8b8]',
+    'TRIGGERED': 'bg-[#e8b8c5] text-[#5a2d3a] border-[#d4a8b8]',
+    'MAJOR': 'bg-[#e8b8c5] text-[#5a2d3a] border-[#d4a8b8]',
+    'MINOR': 'bg-[#f5e6c8] text-[#5a4a2d] border-[#d4c4a8]',
+    'SAFETY_CRITICAL': 'bg-[#e8b8c5] text-[#5a2d3a] border-[#d4a8b8]',
+    
+    // Epistemic states
+    'OBSERVED': 'bg-[#c5e8d4] text-[#2d5a4a] border-[#a8d4bc]',
+    'INFERRED': 'bg-[#c8d8e8] text-[#2d4a5a] border-[#a8c4d4]',
+    'ASSUMED': 'bg-[#e8dcc8] text-[#5a4a2d] border-[#d4c4a8]',
+    'PREDICTED': 'bg-[#d8c8e8] text-[#4a2d5a] border-[#c4a8d4]',
+    'CONTESTED': 'bg-[#e8b8c5] text-[#5a2d3a] border-[#d4a8b8]',
+    'SUPERSEDED': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    'UNKNOWN': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    
+    // Status indicators
+    'NOT_CHECKED': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    'NOT_APPLICABLE': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    'NOT_YET_MEASURED': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    'DRAFT': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    'PENDING': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
+    
+    // Active states
+    'ACTIVE': 'bg-[#c8d8e8] text-[#2d4a5a] border-[#a8c4d4]',
+    'EVALUATED': 'bg-[#c8d8e8] text-[#2d4a5a] border-[#a8c4d4]',
+    'TARGET': 'bg-[#c8d8e8] text-[#2d4a5a] border-[#a8c4d4]',
+    
+    // Human actions
+    'CORRECTED': 'bg-[#d4c8e8] text-[#4a2d5a] border-[#c4b8d4]',
+    'OVERRIDDEN': 'bg-[#d4c8e8] text-[#4a2d5a] border-[#c4b8d4]',
+    
+    // Causal
+    'CORRELATION': 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]',
   };
-  const color = colors[status] || 'bg-gray-800/50 text-gray-400 border-gray-600';
+  const color = colors[status] || 'bg-[#e0e4e8] text-[#4a5a6a] border-[#c4ccd4]';
   return (
     <span className={`px-2 py-0.5 text-xs font-mono border rounded ${color}`}>
       {status}
@@ -84,7 +102,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function SyntheticBadge() {
   return (
-    <span className="px-2 py-0.5 text-xs font-mono border rounded bg-cyan-900/50 text-cyan-300 border-cyan-700">
+    <span className="px-2 py-0.5 text-xs font-mono border rounded bg-[#b8e8e0] text-[#2d5a5a] border-[#a8d4cc]">
       SYNTHETIC
     </span>
   );
@@ -149,10 +167,10 @@ export default function App() {
 
   if (!state.loop) {
     return (
-      <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
         <div className="text-center">
-          <div className="animate-pulse text-2xl font-mono text-cyan-400">HAG-RAP LAB</div>
-          <div className="text-gray-500 mt-2">Initializing cognitive loop...</div>
+          <div className="animate-pulse text-2xl font-mono" style={{ color: 'var(--primary-blue-hover)' }}>HAG-RAP LAB</div>
+          <div className="mt-2" style={{ color: 'var(--text-tertiary)' }}>Initializing cognitive loop...</div>
         </div>
       </div>
     );
@@ -162,15 +180,15 @@ export default function App() {
   const stats = loop.graph.getStats();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Header */}
-      <header className="border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+      <header className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-mono font-bold text-cyan-400">HAG-RAP LAB</h1>
-          <span className="text-xs text-gray-500 font-mono">v0.1.0 — Scientific Demonstrator</span>
+          <h1 className="text-lg font-mono font-bold" style={{ color: 'var(--primary-blue-hover)' }}>HAG-RAP LAB</h1>
+          <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>v0.1.0 — Scientific Demonstrator</span>
           <SyntheticBadge />
         </div>
-        <div className="flex items-center gap-4 text-xs font-mono text-gray-500">
+        <div className="flex items-center gap-4 text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
           <span>Evidence: {stats.evidence}</span>
           <span>Claims: {stats.claims}</span>
           <span>Contradictions: {stats.unresolvedContradictions}/{stats.contradictions}</span>
@@ -181,16 +199,18 @@ export default function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Navigation */}
-        <nav className="w-48 border-r border-gray-800 overflow-y-auto flex-shrink-0">
+        <nav className="w-48 overflow-y-auto flex-shrink-0" style={{ borderRight: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setState(s => ({ ...s, selectedTab: tab.id }))}
-              className={`w-full text-left px-3 py-2 text-sm font-mono border-b border-gray-800/50 transition-colors ${
-                state.selectedTab === tab.id
-                  ? 'bg-cyan-950/30 text-cyan-300 border-l-2 border-l-cyan-400'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900/50'
-              }`}
+              className="w-full text-left px-3 py-2 text-sm font-mono transition-colors"
+              style={{
+                borderBottom: '1px solid var(--border-light)',
+                color: state.selectedTab === tab.id ? 'var(--primary-blue-hover)' : 'var(--text-secondary)',
+                backgroundColor: state.selectedTab === tab.id ? 'var(--primary-blue-light)' : 'transparent',
+                borderLeft: state.selectedTab === tab.id ? '3px solid var(--primary-blue)' : '3px solid transparent',
+              }}
             >
               {tab.label}
             </button>
@@ -198,7 +218,7 @@ export default function App() {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-4">
+        <main className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
           {state.selectedTab === 'overview' && <OverviewPanel loop={loop} stats={stats} />}
           {state.selectedTab === 'evidence' && <EvidencePanel loop={loop} />}
           {state.selectedTab === 'claims' && <ClaimsPanel loop={loop} onWhy={handleWhyQuery} />}
@@ -217,38 +237,38 @@ export default function App() {
         </main>
 
         {/* Right Inspector */}
-        <aside className="w-72 border-l border-gray-800 overflow-y-auto p-3 flex-shrink-0">
-          <h3 className="text-xs font-mono text-gray-500 uppercase mb-2">Scientific Inspector</h3>
+        <aside className="w-72 overflow-y-auto p-3 flex-shrink-0" style={{ borderLeft: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
+          <h3 className="text-xs font-mono uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>Scientific Inspector</h3>
           <div className="space-y-3 text-xs font-mono">
-            <div className="border border-gray-800 rounded p-2">
-              <div className="text-gray-500 mb-1">System Status</div>
-              <div className="text-green-400">COGNITIVE LOOP: ACTIVE</div>
-              <div className="text-gray-400">Mode: DETERMINISTIC_LAB</div>
-              <div className="text-gray-400">External AI: NOT REQUIRED</div>
+            <div className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+              <div className="mb-1" style={{ color: 'var(--text-tertiary)' }}>System Status</div>
+              <div style={{ color: 'var(--success-green)' }}>COGNITIVE LOOP: ACTIVE</div>
+              <div style={{ color: 'var(--text-secondary)' }}>Mode: DETERMINISTIC_LAB</div>
+              <div style={{ color: 'var(--text-secondary)' }}>External AI: NOT REQUIRED</div>
             </div>
-            <div className="border border-gray-800 rounded p-2">
-              <div className="text-gray-500 mb-1">Graph Statistics</div>
+            <div className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+              <div className="mb-1" style={{ color: 'var(--text-tertiary)' }}>Graph Statistics</div>
               {Object.entries(stats).map(([k, v]) => (
-                <div key={k} className="flex justify-between text-gray-400">
+                <div key={k} className="flex justify-between" style={{ color: 'var(--text-secondary)' }}>
                   <span>{k}:</span>
-                  <span className="text-gray-200">{v}</span>
+                  <span style={{ color: 'var(--text-primary)' }}>{v}</span>
                 </div>
               ))}
             </div>
-            <div className="border border-gray-800 rounded p-2">
-              <div className="text-gray-500 mb-1">Test Results</div>
+            <div className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+              <div className="mb-1" style={{ color: 'var(--text-tertiary)' }}>Test Results</div>
               {state.testResults.map(t => (
                 <div key={t.name} className="flex items-center gap-1">
-                  <span className={t.passed ? 'text-green-400' : 'text-red-400'}>
+                  <span style={{ color: t.passed ? 'var(--success-green)' : 'var(--warning-peach)' }}>
                     {t.passed ? '✓' : '✗'}
                   </span>
-                  <span className="text-gray-400 truncate">{t.name}</span>
+                  <span className="truncate" style={{ color: 'var(--text-secondary)' }}>{t.name}</span>
                 </div>
               ))}
             </div>
-            <div className="border border-yellow-900/50 rounded p-2 bg-yellow-950/20">
-              <div className="text-yellow-500 mb-1">⚠ Scientific Honesty</div>
-              <div className="text-gray-400 text-[10px]">
+            <div className="rounded p-2" style={{ border: '1px solid var(--uncertainty-cream)', backgroundColor: 'var(--uncertainty-cream)', opacity: 0.7 }}>
+              <div className="mb-1" style={{ color: '#5a4a2d' }}>⚠ Scientific Honesty</div>
+              <div className="text-[10px]" style={{ color: '#5a4a2d' }}>
                 This is a RESEARCH INSTRUMENT. All data is SYNTHETIC. No operational decisions are made.
                 Capabilities marked EXPERIMENTAL are not validated scientific results.
               </div>
@@ -267,53 +287,53 @@ export default function App() {
 function OverviewPanel({ loop, stats }: { loop: CognitiveLoopState; stats: ReturnType<CognitiveLoopState['graph']['getStats']> }) {
   return (
     <div className="space-y-4">
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h2 className="text-lg font-mono text-cyan-400 mb-2">HAG-RAP LAB — Research Demonstrator</h2>
-        <p className="text-gray-400 text-sm mb-3">
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h2 className="text-lg font-mono mb-2" style={{ color: 'var(--primary-blue-hover)' }}>HAG-RAP LAB — Research Demonstrator</h2>
+        <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
           Human-Governed Deep Reasoning, Abstraction and Planning for Trustworthy Cognitive AI.
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-          <div className="border border-cyan-900/30 rounded p-2 bg-cyan-950/10">
-            <div className="text-cyan-400">Scientific Hypothesis</div>
-            <div className="text-gray-400 mt-1">Trustworthy cognitive performance requires structured coupling between learned representations, typed evidence, causal structure, symbolic constraints, abstraction, world models, planning, assurance, and human governance.</div>
+          <div className="rounded p-2" style={{ border: '1px solid var(--primary-blue-light)', backgroundColor: 'var(--primary-blue-light)', opacity: 0.5 }}>
+            <div style={{ color: 'var(--primary-blue-hover)' }}>Scientific Hypothesis</div>
+            <div className="mt-1" style={{ color: 'var(--text-secondary)' }}>Trustworthy cognitive performance requires structured coupling between learned representations, typed evidence, causal structure, symbolic constraints, abstraction, world models, planning, assurance, and human governance.</div>
           </div>
-          <div className="border border-gray-800 rounded p-2">
-            <div className="text-gray-500">Current Case</div>
-            <div className="text-gray-300 mt-1">{loop.currentCase?.name || 'None'}</div>
-            <div className="text-gray-500 mt-1">Family: {loop.currentCase?.scenarioFamily || '-'}</div>
+          <div className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
+            <div style={{ color: 'var(--text-tertiary)' }}>Current Case</div>
+            <div className="mt-1" style={{ color: 'var(--text-primary)' }}>{loop.currentCase?.name || 'None'}</div>
+            <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>Family: {loop.currentCase?.scenarioFamily || '-'}</div>
             <SyntheticBadge />
           </div>
         </div>
       </div>
 
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-3">Cognitive Cycle Status</h3>
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>Cognitive Cycle Status</h3>
         <div className="grid grid-cols-4 gap-2 text-xs font-mono">
           {[
-            { label: 'Evidence', count: stats.evidence, color: 'text-blue-400' },
-            { label: 'Claims', count: stats.claims, color: 'text-purple-400' },
-            { label: 'Contradictions', count: stats.contradictions, color: 'text-orange-400' },
-            { label: 'Inferences', count: stats.inferences, color: 'text-green-400' },
-            { label: 'Causal Nodes', count: stats.causalNodes, color: 'text-yellow-400' },
-            { label: 'Concepts', count: stats.concepts, color: 'text-pink-400' },
-            { label: 'World Models', count: stats.worldModels, color: 'text-cyan-400' },
-            { label: 'Plans', count: stats.plans, color: 'text-indigo-400' },
-            { label: 'Goals', count: stats.goals, color: 'text-emerald-400' },
-            { label: 'Constraints', count: stats.constraints, color: 'text-red-400' },
-            { label: 'Interventions', count: stats.interventions, color: 'text-amber-400' },
-            { label: 'Relations', count: stats.relations, color: 'text-gray-400' },
+            { label: 'Evidence', count: stats.evidence, color: 'var(--evidence-blue)' },
+            { label: 'Claims', count: stats.claims, color: 'var(--reasoning-violet)' },
+            { label: 'Contradictions', count: stats.contradictions, color: 'var(--contradiction-coral)' },
+            { label: 'Inferences', count: stats.inferences, color: 'var(--success-green)' },
+            { label: 'Causal Nodes', count: stats.causalNodes, color: 'var(--uncertainty-cream)' },
+            { label: 'Concepts', count: stats.concepts, color: 'var(--secondary-lavender)' },
+            { label: 'World Models', count: stats.worldModels, color: 'var(--worldmodel-turquoise)' },
+            { label: 'Plans', count: stats.plans, color: 'var(--primary-blue)' },
+            { label: 'Goals', count: stats.goals, color: 'var(--abstraction-sage)' },
+            { label: 'Constraints', count: stats.constraints, color: 'var(--warning-peach)' },
+            { label: 'Interventions', count: stats.interventions, color: 'var(--human-lavender)' },
+            { label: 'Relations', count: stats.relations, color: 'var(--text-secondary)' },
           ].map(item => (
-            <div key={item.label} className="border border-gray-800 rounded p-2 text-center">
-              <div className={`text-lg font-bold ${item.color}`}>{item.count}</div>
-              <div className="text-gray-500">{item.label}</div>
+            <div key={item.label} className="rounded p-2 text-center" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
+              <div className="text-lg font-bold" style={{ color: item.color }}>{item.count}</div>
+              <div style={{ color: 'var(--text-tertiary)' }}>{item.label}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-2">Key Principles</h3>
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-2" style={{ color: 'var(--text-secondary)' }}>Key Principles</h3>
+        <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
           {[
             'No claim without evidence',
             'No causal claim from correlation alone',
@@ -329,7 +349,7 @@ function OverviewPanel({ loop, stats }: { loop: CognitiveLoopState; stats: Retur
             'Deterministic first where determinism suffices',
           ].map((p, i) => (
             <div key={i} className="flex items-start gap-1">
-              <span className="text-cyan-600">▸</span>
+              <span style={{ color: 'var(--primary-blue)' }}>▸</span>
               <span>{p}</span>
             </div>
           ))}
@@ -345,14 +365,14 @@ function EvidencePanel({ loop }: { loop: CognitiveLoopState }) {
 
   return (
     <div className="space-y-4">
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-3">Sources ({sources.length})</h3>
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>Sources ({sources.length})</h3>
         <div className="space-y-2">
           {sources.map(s => (
-            <div key={s.id} className="border border-gray-800 rounded p-2 flex items-center justify-between">
+            <div key={s.id} className="rounded p-2 flex items-center justify-between" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
               <div>
-                <div className="text-sm text-gray-200">{s.name}</div>
-                <div className="text-xs text-gray-500">{s.type} — Reliability: {(s.reliability * 100).toFixed(0)}%</div>
+                <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{s.name}</div>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{s.type} — Reliability: {(s.reliability * 100).toFixed(0)}%</div>
               </div>
               <StatusBadge status={s.status} />
             </div>
@@ -360,17 +380,17 @@ function EvidencePanel({ loop }: { loop: CognitiveLoopState }) {
         </div>
       </div>
 
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-3">Evidence Items ({evidence.length})</h3>
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>Evidence Items ({evidence.length})</h3>
         <div className="space-y-2">
           {evidence.map(e => (
-            <div key={e.id} className="border border-gray-800 rounded p-2">
+            <div key={e.id} className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-500">{e.type}</span>
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{e.type}</span>
                 <StatusBadge status={e.status} />
               </div>
-              <div className="text-sm text-gray-200">{e.content}</div>
-              <div className="text-xs text-gray-500 mt-1">Tags: {e.tags.join(', ')}</div>
+              <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{e.content}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Tags: {e.tags.join(', ')}</div>
             </div>
           ))}
         </div>
@@ -383,35 +403,38 @@ function ClaimsPanel({ loop, onWhy }: { loop: CognitiveLoopState; onWhy: (id: st
   const claims = loop.graph.getAllClaims();
 
   return (
-    <div className="border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-mono text-gray-300 mb-3">Claims ({claims.length})</h3>
+    <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+      <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>Claims ({claims.length})</h3>
       <div className="space-y-2">
         {claims.map(c => (
-          <div key={c.id} className="border border-gray-800 rounded p-3">
+          <div key={c.id} className="rounded p-3" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <StatusBadge status={c.status} />
                 <StatusBadge status={c.verificationStatus} />
-                {c.supersededBy && <span className="text-xs text-gray-500">→ superseded</span>}
+                {c.supersededBy && <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>→ superseded</span>}
               </div>
               <button
                 onClick={() => onWhy(c.id)}
-                className="px-2 py-1 text-xs font-mono border border-cyan-800 text-cyan-400 rounded hover:bg-cyan-950/30"
+                className="px-2 py-1 text-xs font-mono rounded"
+                style={{ border: '1px solid var(--primary-blue)', color: 'var(--primary-blue-hover)', backgroundColor: 'transparent' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-blue-light)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 WHY?
               </button>
             </div>
-            <div className="text-sm text-gray-200">{c.content}</div>
-            <div className="flex gap-3 mt-2 text-xs text-gray-500">
+            <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{c.content}</div>
+            <div className="flex gap-3 mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
               <span>Evidence: {c.evidenceIds.length}</span>
               <span>Assumptions: {c.assumptionIds.length}</span>
               <span>Inferences: {c.inferenceIds.length}</span>
               {c.uncertainty.length > 0 && (
-                <span className="text-yellow-500">Uncertainty: {c.uncertainty.length}</span>
+                <span style={{ color: 'var(--uncertainty-cream)' }}>Uncertainty: {c.uncertainty.length}</span>
               )}
             </div>
             {c.uncertainty.length > 0 && (
-              <div className="mt-2 text-xs text-yellow-400/80">
+              <div className="mt-2 text-xs" style={{ color: 'var(--uncertainty-cream)', opacity: 0.8 }}>
                 {c.uncertainty.map((u, i) => (
                   <div key={i}>⚠ [{u.type}] {u.description}</div>
                 ))}
@@ -428,27 +451,27 @@ function ContradictionsPanel({ loop }: { loop: CognitiveLoopState }) {
   const contradictions = loop.graph.getAllContradictions();
 
   return (
-    <div className="border border-gray-800 rounded-lg p-4">
-      <h3 className="text-sm font-mono text-gray-300 mb-3">
-        Contradictions ({contradictions.length}) — <span className="text-orange-400">Preserved, not silently resolved</span>
+    <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+      <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>
+        Contradictions ({contradictions.length}) — <span style={{ color: 'var(--contradiction-coral)' }}>Preserved, not silently resolved</span>
       </h3>
       <div className="space-y-2">
         {contradictions.map(c => (
-          <div key={c.id} className="border border-orange-900/30 rounded p-3 bg-orange-950/10">
+          <div key={c.id} className="rounded p-3" style={{ border: '1px solid var(--contradiction-coral)', backgroundColor: 'var(--contradiction-coral)', opacity: 0.8 }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-orange-400 font-mono">CONTRADICTION</span>
+              <span className="text-xs font-mono" style={{ color: 'var(--contradiction-coral)' }}>CONTRADICTION</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Classified: {c.classification}</span>
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Classified: {c.classification}</span>
                 <StatusBadge status={c.resolved ? 'COMPLETED' : 'ACTIVE'} />
               </div>
             </div>
-            <div className="text-xs text-gray-400">
+            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               <div>Claim A: {loop.graph.getClaim(c.claimAId)?.content || c.claimAId}</div>
-              <div className="text-orange-500 my-1">⚡ CONTRADICTS ⚡</div>
+              <div className="my-1" style={{ color: 'var(--contradiction-coral)' }}>⚡ CONTRADICTS ⚡</div>
               <div>Claim B: {loop.graph.getClaim(c.claimBId)?.content || c.claimBId}</div>
             </div>
             {c.resolution && (
-              <div className="mt-2 text-xs text-gray-500 border-t border-gray-800 pt-2">
+              <div className="mt-2 text-xs pt-2" style={{ color: 'var(--text-tertiary)', borderTop: '1px solid var(--border-light)' }}>
                 Resolution: {c.resolution}
               </div>
             )}
@@ -465,34 +488,34 @@ function ReasoningPanel({ loop }: { loop: CognitiveLoopState }) {
 
   return (
     <div className="space-y-4">
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-3">Inference Rules ({rules.length})</h3>
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>Inference Rules ({rules.length})</h3>
         {rules.map(r => (
-          <div key={r.id} className="border border-gray-800 rounded p-2 mb-2">
-            <div className="text-sm text-gray-200">{r.name}</div>
-            <div className="text-xs text-gray-500 mt-1">Family: {r.family}</div>
-            <div className="text-xs text-gray-400 mt-1">
+          <div key={r.id} className="rounded p-2 mb-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
+            <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{r.name}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Family: {r.family}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               IF {r.premises.join(' AND ')} THEN {r.conclusion}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-3">Executed Inferences ({inferences.length})</h3>
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-3" style={{ color: 'var(--text-secondary)' }}>Executed Inferences ({inferences.length})</h3>
         <div className="space-y-2">
           {inferences.map(inf => (
-            <div key={inf.id} className="border border-gray-800 rounded p-2">
+            <div key={inf.id} className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <StatusBadge status={inf.family} />
                 <StatusBadge status={inf.verificationStatus} />
               </div>
-              <div className="text-sm text-gray-200">{inf.method}</div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{inf.method}</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                 Inputs: {inf.inputClaimIds.length} | Assumptions: {inf.assumptions.length}
               </div>
               {inf.uncertainty.length > 0 && (
-                <div className="text-xs text-yellow-400/80 mt-1">
+                <div className="text-xs mt-1" style={{ color: 'var(--uncertainty-cream)', opacity: 0.8 }}>
                   ⚠ {inf.uncertainty.map(u => `[${u.type}] ${u.description}`).join('; ')}
                 </div>
               )}
@@ -501,13 +524,13 @@ function ReasoningPanel({ loop }: { loop: CognitiveLoopState }) {
         </div>
       </div>
 
-      <div className="border border-gray-800 rounded-lg p-4">
-        <h3 className="text-sm font-mono text-gray-300 mb-2">Assumptions ({loop.graph.getAllAssumptions().length})</h3>
+      <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
+        <h3 className="text-sm font-mono mb-2" style={{ color: 'var(--text-secondary)' }}>Assumptions ({loop.graph.getAllAssumptions().length})</h3>
         {loop.graph.getAllAssumptions().map(a => (
-          <div key={a.id} className="border border-amber-900/30 rounded p-2 mb-2 bg-amber-950/10">
-            <div className="text-sm text-amber-300">{a.content}</div>
-            <div className="text-xs text-gray-500 mt-1">Justification: {a.justification}</div>
-            <div className="text-xs text-gray-500">Challengeable: {a.challengeable ? 'YES' : 'NO'}</div>
+          <div key={a.id} className="rounded p-2 mb-2" style={{ border: '1px solid var(--assumed-amber)', backgroundColor: 'var(--assumed-amber)', opacity: 0.7 }}>
+            <div className="text-sm" style={{ color: '#5a4a2d' }}>{a.content}</div>
+            <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Justification: {a.justification}</div>
+            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Challengeable: {a.challengeable ? 'YES' : 'NO'}</div>
           </div>
         ))}
       </div>
