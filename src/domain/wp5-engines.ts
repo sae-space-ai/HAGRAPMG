@@ -2,24 +2,29 @@
  * HAG-RAP LAB — WP5 Engines
  * Deep Planning & Continual Replanning
  * 
+ * ARCHITECTURE: Bounded Planning Context
+ * Uses WP5PlanningRepository for WP5-specific state.
+ * Uses EvidenceGraphBridge to read canonical WP2-WP4 objects.
+ * 
  * SCIENTIFIC STATUS: IMPLEMENTED
  */
 
-import { EvidenceGraphMemory } from './evidence-graph.ts';
+import { WP5PlanningRepository } from './wp5-repository.ts';
+import { EvidenceGraphBridge } from './wp5-bridge.ts';
 import {
-  Goal, GoalStatus, GoalDecomposition, GoalRevision,
-  WP5Constraint, ConstraintType, ConstraintMutability,
+  PlanningGoal, GoalDecomposition, GoalRevision,
+  PlanningConstraint, PlanningConstraintType, ConstraintMutability,
   PlanningOperator,
-  Plan, PlanStatus, PlanStep, PlanDependency, PlanBranch,
+  PlanningPlan, PlanningStep, PlanDependency, PlanBranch,
   PlanEvaluation, PlanAlternative, PlanFailure, PlanRepair, PlanRevision,
   Deviation, DeviationType, DeviationSeverity,
   ResourceRequirement, ResourceConflict, ResourceBudget,
   AgentDeclaration, MultiagentCommitment, CommitmentStatus,
-  AuthorityBoundary, AuthorityDecision, AuthorityViolation,
   PlanHistoryEntry, WhatChangedTrace, WP5PlanCard,
-  OrderingRelation, Uncertainty
+  OrderingRelation,
+  PlanningLifecycleStatus, PlanningAdmissibility, PlanningReplanningStatus, PlanningAuthorityStatus
 } from './wp5-types.ts';
-import { createTimestamped, generateId, now } from './types.ts';
+import { Uncertainty, createTimestamped, generateId, now } from './types.ts';
 
 // ============================================================
 // GOAL ENGINE (§6-7)
@@ -27,36 +32,37 @@ import { createTimestamped, generateId, now } from './types.ts';
 
 export class GoalEngine {
   /**
-   * Create a new goal
+   * Create a new planning goal
    */
-  createGoal(
+  createPlanningGoal(
     caseId: string,
+    canonicalGoalId: string,
     description: string,
-    origin: Goal['origin'],
+    origin: PlanningGoal['origin'],
     priority: number,
     successCriteria: string[],
     failureCriteria: string[],
-    constraints: string[],
-    graph: EvidenceGraphMemory
-  ): Goal {
-    const goal: Goal = {
+    constraintIds: string[],
+    repository: WP5PlanningRepository
+  ): PlanningGoal {
+    const goal: PlanningGoal = {
       ...createTimestamped(),
-      goalId: generateId(),
+      planningGoalId: generateId(),
+      canonicalGoalId,
       caseId,
-      description,
       origin,
       priority,
       successCriteria,
       failureCriteria,
-      dependencies: [],
-      constraints,
+      dependencyIds: [],
+      constraintIds,
       uncertainties: [],
-      status: 'PROPOSED',
+      decompositionStatus: 'ATOMIC',
       version: 1,
       provenance: [`Created by ${origin}`]
     };
 
-    graph.addGoal(goal);
+    repository.addPlanningGoal(goal);
     return goal;
   }
 
@@ -65,55 +71,60 @@ export class GoalEngine {
    * CRITICAL: Must preserve parent semantics
    */
   decomposeGoal(
-    parentGoalId: string,
+    parentPlanningGoalId: string,
     subgoalDescriptions: string[],
     method: string,
     assumptions: string[],
     evidence: string[],
     constraintsInherited: string[],
     constraintsAdded: string[],
-    graph: EvidenceGraphMemory
-  ): { decomposition: GoalDecomposition; subgoals: Goal[] } | null {
-    const parentGoal = graph.getGoal(parentGoalId);
+    repository: WP5PlanningRepository
+  ): { decomposition: GoalDecomposition; subgoals: PlanningGoal[] } | null {
+    const parentGoal = repository.getPlanningGoal(parentPlanningGoalId);
     if (!parentGoal) return null;
 
     // CRITICAL: Verify parent goal is active
-    if (parentGoal.status !== 'ACTIVE' && parentGoal.status !== 'PROPOSED') {
+    if (parentGoal.decompositionStatus === 'DRIFT_DETECTED') {
       return null;
     }
 
-    const subgoals: Goal[] = [];
+    const subgoals: PlanningGoal[] = [];
     for (const desc of subgoalDescriptions) {
-      const subgoal = this.createGoal(
-        parentGoal.caseId,
-        desc,
-        'DECOMPOSED',
-        parentGoal.priority,
-        [],
-        [],
-        [...constraintsInherited],
-        graph
-      );
-      subgoal.parentGoalId = parentGoalId;
-      subgoal.status = 'ACTIVE';
+      const subgoal: PlanningGoal = {
+        ...createTimestamped(),
+        planningGoalId: generateId(),
+        canonicalGoalId: '', // Will be set by canonical adapter
+        caseId: parentGoal.caseId,
+        origin: 'DECOMPOSED',
+        parentPlanningGoalId: parentPlanningGoalId,
+        priority: parentGoal.priority,
+        successCriteria: [],
+        failureCriteria: [],
+        dependencyIds: [],
+        constraintIds: [...constraintsInherited],
+        uncertainties: [],
+        decompositionStatus: 'ATOMIC',
+        version: 1,
+        provenance: [`Decomposed from ${parentPlanningGoalId}`]
+      };
+      repository.addPlanningGoal(subgoal);
       subgoals.push(subgoal);
     }
 
     const decomposition: GoalDecomposition = {
       ...createTimestamped(),
       decompositionId: generateId(),
-      parentGoalId,
-      subgoalIds: subgoals.map(sg => sg.goalId),
+      parentPlanningGoalId,
+      subgoalPlanningIds: subgoals.map(sg => sg.planningGoalId),
       method,
       assumptions,
       evidence,
       constraintsInherited,
       constraintsAdded,
-      constraintsNotApplicable: [],
-      provenance: [`Decomposed from ${parentGoalId}`]
+      provenance: [`Decomposed from ${parentPlanningGoalId}`]
     };
 
-    graph.addGoalDecomposition(decomposition);
+    repository.addGoalDecomposition(decomposition);
     return { decomposition, subgoals };
   }
 
@@ -122,26 +133,26 @@ export class GoalEngine {
    * CRITICAL: Subgoal must not alter parent semantics
    */
   detectGoalDrift(
-    parentGoalId: string,
-    subgoalId: string,
-    graph: EvidenceGraphMemory
+    parentPlanningGoalId: string,
+    subgoalPlanningId: string,
+    repository: WP5PlanningRepository
   ): { driftDetected: boolean; reason?: string } {
-    const parent = graph.getGoal(parentGoalId);
-    const subgoal = graph.getGoal(subgoalId);
+    const parent = repository.getPlanningGoal(parentPlanningGoalId);
+    const subgoal = repository.getPlanningGoal(subgoalPlanningId);
 
     if (!parent || !subgoal) {
       return { driftDetected: false };
     }
 
     // Check if subgoal parent matches
-    if (subgoal.parentGoalId !== parentGoalId) {
+    if (subgoal.parentPlanningGoalId !== parentPlanningGoalId) {
       return { driftDetected: true, reason: 'Subgoal parent mismatch' };
     }
 
     // Check if subgoal constraints are compatible with parent
-    const parentConstraints = new Set(parent.constraints);
-    const incompatibleConstraints = subgoal.constraints.filter(
-      c => !parentConstraints.has(c) && !subgoal.constraints.includes(c)
+    const parentConstraints = new Set(parent.constraintIds);
+    const incompatibleConstraints = subgoal.constraintIds.filter(
+      (c: string) => !parentConstraints.has(c)
     );
 
     if (incompatibleConstraints.length > 0) {
@@ -158,27 +169,28 @@ export class GoalEngine {
    * Revise a goal with full provenance
    */
   reviseGoal(
-    goalId: string,
+    planningGoalId: string,
     changeType: GoalRevision['changeType'],
     reason: string,
     evidence: string[],
     humanIntervention: string | undefined,
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): GoalRevision | null {
-    const goal = graph.getGoal(goalId);
+    const goal = repository.getPlanningGoal(planningGoalId);
     if (!goal) return null;
 
     const previousVersion = goal.version;
     goal.version += 1;
     goal.updatedAt = now();
-    goal.status = changeType === 'ABANDONED' ? 'ABANDONED' : 
-                  changeType === 'SUPERSEDED' ? 'SUPERSEDED' : 
-                  goal.status;
+    
+    if (changeType === 'ABANDONED') {
+      goal.decompositionStatus = 'DRIFT_DETECTED';
+    }
 
     const revision: GoalRevision = {
       ...createTimestamped(),
       revisionId: generateId(),
-      goalId,
+      planningGoalId,
       previousVersion,
       newVersion: goal.version,
       changeType,
@@ -188,10 +200,13 @@ export class GoalEngine {
       provenance: [`Goal revised: ${changeType}`]
     };
 
-    graph.addGoalRevision(revision);
+    repository.addGoalRevision(revision);
+    repository.updatePlanningGoal(goal);
     return revision;
   }
 }
+
+// GoalEngine is defined above in the new architecture
 
 // ============================================================
 // CONSTRAINT ENGINE (§8-9, §36)
@@ -199,23 +214,23 @@ export class GoalEngine {
 
 export class ConstraintEngine {
   /**
-   * Create a constraint with authority semantics
+   * Create a planning constraint with authority semantics
    */
-  createConstraint(
+  createPlanningConstraint(
     caseId: string,
-    type: ConstraintType,
+    type: PlanningConstraintType,
     description: string,
-    source: WP5Constraint['source'],
-    authority: WP5Constraint['authority'],
+    source: PlanningConstraint['source'],
+    authority: PlanningConstraint['authority'],
     mutability: ConstraintMutability,
     hard: boolean,
     condition: string,
-    severity: WP5Constraint['severity'],
-    graph: EvidenceGraphMemory
-  ): WP5Constraint {
-    const constraint: WP5Constraint = {
+    severity: PlanningConstraint['severity'],
+    repository: WP5PlanningRepository
+  ): PlanningConstraint {
+    const constraint: PlanningConstraint = {
       ...createTimestamped(),
-      constraintId: generateId(),
+      planningConstraintId: generateId(),
       caseId,
       type,
       description,
@@ -232,7 +247,7 @@ export class ConstraintEngine {
       provenance: [`Created by ${source}`]
     };
 
-    graph.addWP5Constraint(constraint);
+    repository.addPlanningConstraint(constraint);
     return constraint;
   }
 
@@ -240,11 +255,11 @@ export class ConstraintEngine {
    * CRITICAL: AI cannot modify HUMAN_LOCKED constraints (§36 I1)
    */
   canModifyConstraint(
-    constraintId: string,
+    planningConstraintId: string,
     actorType: 'AI' | 'HUMAN',
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): { allowed: boolean; reason?: string } {
-    const constraint = graph.getWP5Constraint(constraintId);
+    const constraint = repository.getPlanningConstraint(planningConstraintId);
     if (!constraint) {
       return { allowed: false, reason: 'Constraint not found' };
     }
@@ -286,26 +301,26 @@ export class ConstraintEngine {
    * Validate constraint against plan
    */
   validateConstraint(
-    constraintId: string,
-    planId: string,
-    graph: EvidenceGraphMemory
+    planningConstraintId: string,
+    planningPlanId: string,
+    repository: WP5PlanningRepository
   ): { satisfied: boolean; violation?: string } {
-    const constraint = graph.getWP5Constraint(constraintId);
-    const plan = graph.getPlan(planId);
+    const constraint = repository.getPlanningConstraint(planningConstraintId);
+    const plan = repository.getPlanningPlan(planningPlanId);
 
     if (!constraint || !plan) {
       return { satisfied: false, violation: 'Constraint or plan not found' };
     }
 
     // Check if plan violates constraint
-    const violates = plan.constraints.includes(constraintId) && 
+    const violates = plan.constraintIds.includes(planningConstraintId) && 
                      constraint.hard &&
-                     plan.status !== 'ADMISSIBLE';
+                     plan.admissibility !== 'ADMISSIBLE';
 
     if (violates) {
       return { 
         satisfied: false, 
-        violation: `Plan ${planId} violates hard constraint ${constraintId}` 
+        violation: `Plan ${planningPlanId} violates hard constraint ${planningConstraintId}` 
       };
     }
 
@@ -316,18 +331,18 @@ export class ConstraintEngine {
    * CRITICAL: Hard constraints cannot be traded for utility (§9)
    */
   isHardConstraintViolated(
-    planId: string,
-    graph: EvidenceGraphMemory
+    planningPlanId: string,
+    repository: WP5PlanningRepository
   ): { violated: boolean; constraints: string[] } {
-    const plan = graph.getPlan(planId);
+    const plan = repository.getPlanningPlan(planningPlanId);
     if (!plan) return { violated: false, constraints: [] };
 
     const violatedHardConstraints: string[] = [];
-    for (const constraintId of plan.constraints) {
-      const constraint = graph.getWP5Constraint(constraintId);
+    for (const constraintId of plan.constraintIds) {
+      const constraint = repository.getPlanningConstraint(constraintId);
       if (constraint && constraint.hard && constraint.locked) {
         // Check if plan actually violates this constraint
-        if (plan.status === 'INADMISSIBLE') {
+        if (plan.admissibility === 'INADMISSIBLE') {
           violatedHardConstraints.push(constraintId);
         }
       }
@@ -353,23 +368,23 @@ export class PlanningEngine {
     goalIds: string[],
     operatorIds: string[],
     constraintIds: string[],
-    graph: EvidenceGraphMemory
-  ): Plan[] {
-    const candidates: Plan[] = [];
+    repository: WP5PlanningRepository
+  ): PlanningPlan[] {
+    const candidates: PlanningPlan[] = [];
 
     // Generate at least 2 candidate plans
     for (let i = 0; i < 2; i++) {
-      const plan: Plan = {
+      const plan: PlanningPlan = {
         ...createTimestamped(),
-        planId: generateId(),
+        planningPlanId: generateId(),
         caseId,
         goalIds,
         steps: [],
         dependencies: [],
         branches: [],
-        constraints: constraintIds,
-        lockedConstraints: constraintIds.filter(id => {
-          const c = graph.getWP5Constraint(id);
+        constraintIds,
+        lockedConstraintIds: constraintIds.filter(id => {
+          const c = repository.getPlanningConstraint(id);
           return c?.locked || false;
         }),
         assumptions: [],
@@ -379,13 +394,15 @@ export class PlanningEngine {
         risk: 'UNKNOWN',
         humanGates: [],
         fallbacks: [],
-        validationStatus: 'PENDING',
-        status: 'CANDIDATE',
+        lifecycleStatus: 'DRAFT',
+        admissibility: 'NOT_EVALUATED',
+        replanningStatus: 'STABLE',
+        authorityStatus: 'WITHIN_AUTHORITY',
         version: 1,
         provenance: [`Generated candidate ${i + 1}`]
       };
 
-      graph.addPlan(plan);
+      repository.addPlanningPlan(plan);
       candidates.push(plan);
     }
 
@@ -397,15 +414,15 @@ export class PlanningEngine {
    * CRITICAL: Hard constraints make plan INADMISSIBLE if violated
    */
   validatePlan(
-    planId: string,
-    graph: EvidenceGraphMemory
+    planningPlanId: string,
+    repository: WP5PlanningRepository
   ): PlanEvaluation {
-    const plan = graph.getPlan(planId);
+    const plan = repository.getPlanningPlan(planningPlanId);
     if (!plan) {
       return {
         ...createTimestamped(),
         evaluationId: generateId(),
-        planId,
+        planningPlanId,
         goalAlignment: 0,
         constraintsSatisfied: [],
         constraintsViolated: [{ constraintId: 'UNKNOWN', reason: 'Plan not found' }],
@@ -426,12 +443,12 @@ export class PlanningEngine {
     const blockingConstraints: string[] = [];
 
     // Check each constraint
-    for (const constraintId of plan.constraints) {
-      const constraint = graph.getWP5Constraint(constraintId);
+    for (const constraintId of plan.constraintIds) {
+      const constraint = repository.getPlanningConstraint(constraintId);
       if (!constraint) continue;
 
       // CRITICAL: Hard constraints block admissibility
-      if (constraint.hard && plan.status === 'INADMISSIBLE') {
+      if (constraint.hard && plan.admissibility === 'INADMISSIBLE') {
         constraintsViolated.push({
           constraintId,
           reason: `Hard constraint violated: ${constraint.description}`
@@ -445,27 +462,26 @@ export class PlanningEngine {
     // CRITICAL: If any hard constraint violated, plan is INADMISSIBLE (§19)
     const admissible = constraintsViolated.length === 0 || 
                        constraintsViolated.every(v => {
-                         const c = graph.getWP5Constraint(v.constraintId);
+                         const c = repository.getPlanningConstraint(v.constraintId);
                          return c && !c.hard;
                        });
 
     if (!admissible) {
-      plan.status = 'INADMISSIBLE';
+      plan.admissibility = 'INADMISSIBLE';
     } else {
-      plan.status = 'ADMISSIBLE';
-      plan.validationStatus = 'VALID';
+      plan.admissibility = 'ADMISSIBLE';
     }
 
     const evaluation: PlanEvaluation = {
       ...createTimestamped(),
       evaluationId: generateId(),
-      planId,
+      planningPlanId,
       goalAlignment: admissible ? 1.0 : 0.0,
       constraintsSatisfied,
       constraintsViolated,
       assumptions: plan.assumptions,
       uncertainties: plan.uncertainties,
-      resourceRequirements: plan.resources.map(r => ({
+      resourceRequirements: plan.resources.map((r: {resource: string, allocated: number}) => ({
         resource: r.resource,
         required: r.allocated,
         available: undefined
@@ -475,10 +491,11 @@ export class PlanningEngine {
       admissible,
       blockingConstraints,
       reason: admissible ? 'All hard constraints satisfied' : 'Hard constraints violated',
-      provenance: [`Validated plan ${planId}`]
+      provenance: [`Validated plan ${planningPlanId}`]
     };
 
-    graph.addPlanEvaluation(evaluation);
+    repository.addPlanEvaluation(evaluation);
+    repository.updatePlanningPlan(plan);
     return evaluation;
   }
 
@@ -487,17 +504,17 @@ export class PlanningEngine {
    */
   checkNoAdmissiblePlan(
     candidatePlanIds: string[],
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): { noAdmissible: boolean; blockingConstraints: string[]; failedCandidates: string[] } {
     const failedCandidates: string[] = [];
     const allBlockingConstraints = new Set<string>();
 
-    for (const planId of candidatePlanIds) {
-      const plan = graph.getPlan(planId);
-      if (!plan || plan.status === 'INADMISSIBLE') {
-        failedCandidates.push(planId);
+    for (const planningPlanId of candidatePlanIds) {
+      const plan = repository.getPlanningPlan(planningPlanId);
+      if (!plan || plan.admissibility === 'INADMISSIBLE') {
+        failedCandidates.push(planningPlanId);
         if (plan) {
-          plan.lockedConstraints.forEach(c => allBlockingConstraints.add(c));
+          plan.lockedConstraintIds.forEach((c: string) => allBlockingConstraints.add(c));
         }
       }
     }
@@ -515,29 +532,29 @@ export class PlanningEngine {
    * Create plan alternative record (§17)
    */
   recordAlternative(
-    planId: string,
-    alternativePlanId: string,
+    planningPlanId: string,
+    alternativePlanningPlanId: string,
     comparisonRationale: string,
     whyGenerated: string,
     whySelected: boolean,
     whyRejected: boolean,
     rejectionReason: string | undefined,
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): PlanAlternative {
     const alternative: PlanAlternative = {
       ...createTimestamped(),
       alternativeId: generateId(),
-      planId,
-      alternativePlanId,
+      planningPlanId,
+      alternativePlanningPlanId,
       comparisonRationale,
       whyGenerated,
       whySelected,
       whyRejected,
       rejectionReason,
-      provenance: [`Alternative recorded for ${planId}`]
+      provenance: [`Alternative recorded for ${planningPlanId}`]
     };
 
-    graph.addPlanAlternative(alternative);
+    repository.addPlanAlternative(alternative);
     return alternative;
   }
 }
@@ -551,7 +568,7 @@ export class DeviationEngine {
    * Detect deviation between predicted and observed state (§26)
    */
   detectDeviation(
-    planId: string,
+    planningPlanId: string,
     stepId: string | undefined,
     type: DeviationType,
     severity: DeviationSeverity,
@@ -559,16 +576,16 @@ export class DeviationEngine {
     predictedState: string,
     observedState: string,
     evidence: string[],
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): Deviation {
-    const plan = graph.getPlan(planId);
-    const constraintsAffected = plan ? plan.constraints : [];
-    const lockedConstraintsAffected = plan ? plan.lockedConstraints : [];
+    const plan = repository.getPlanningPlan(planningPlanId);
+    const constraintsAffected = plan ? plan.constraintIds : [];
+    const lockedConstraintsAffected = plan ? plan.lockedConstraintIds : [];
 
     const deviation: Deviation = {
       ...createTimestamped(),
       deviationId: generateId(),
-      planId,
+      planningPlanId,
       stepId,
       type,
       severity,
@@ -580,10 +597,10 @@ export class DeviationEngine {
       lockedConstraintsAffected,
       repairable: severity === 'MINOR',
       repairAttempted: false,
-      provenance: [`Deviation detected in plan ${planId}`]
+      provenance: [`Deviation detected in plan ${planningPlanId}`]
     };
 
-    graph.addDeviation(deviation);
+    repository.addDeviation(deviation);
     return deviation;
   }
 
@@ -596,9 +613,9 @@ export class DeviationEngine {
     repairType: PlanRepair['repairType'],
     description: string,
     changes: PlanRepair['changes'],
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): PlanRepair | null {
-    const deviation = graph.getDeviation(deviationId);
+    const deviation = repository.getDeviation(deviationId);
     if (!deviation) return null;
 
     // CRITICAL: Only MINOR deviations can be locally repaired
@@ -609,7 +626,7 @@ export class DeviationEngine {
     const repair: PlanRepair = {
       ...createTimestamped(),
       repairId: generateId(),
-      planId: deviation.planId,
+      planningPlanId: deviation.planningPlanId,
       deviationId,
       repairType,
       description,
@@ -624,7 +641,7 @@ export class DeviationEngine {
     deviation.repairAttempted = true;
     deviation.repairId = repair.repairId;
 
-    graph.addPlanRepair(repair);
+    repository.addPlanRepair(repair);
     return repair;
   }
 
@@ -633,26 +650,26 @@ export class DeviationEngine {
    * CRITICAL: Creates new plan version, does not overwrite
    */
   triggerReplanning(
-    planId: string,
+    planningPlanId: string,
     reason: string,
     newEvidence: string[],
     updatedWorldState: string | undefined,
     failedSteps: string[],
     humanIntervention: string | undefined,
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): PlanRevision | null {
-    const plan = graph.getPlan(planId);
+    const plan = repository.getPlanningPlan(planningPlanId);
     if (!plan) return null;
 
     const previousVersion = plan.version;
     plan.version += 1;
-    plan.status = 'REPLANNING';
+    plan.replanningStatus = 'REPLANNING';
     plan.updatedAt = now();
 
     const revision: PlanRevision = {
       ...createTimestamped(),
       revisionId: generateId(),
-      planId,
+      planningPlanId,
       previousVersion,
       newVersion: plan.version,
       revisionType: 'REPLAN',
@@ -663,10 +680,11 @@ export class DeviationEngine {
       failedSteps,
       constraintsChanged: false,
       humanIntervention,
-      provenance: [`Replanning triggered for plan ${planId}`]
+      provenance: [`Replanning triggered for plan ${planningPlanId}`]
     };
 
-    graph.addPlanRevision(revision);
+    repository.addPlanRevision(revision);
+    repository.updatePlanningPlan(plan);
     return revision;
   }
 
@@ -674,21 +692,22 @@ export class DeviationEngine {
    * CRITICAL: Safe stop for SAFETY_CRITICAL deviations (§33)
    */
   triggerSafeStop(
-    planId: string,
+    planningPlanId: string,
     deviationId: string,
     reason: string,
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): boolean {
-    const plan = graph.getPlan(planId);
-    const deviation = graph.getDeviation(deviationId);
+    const plan = repository.getPlanningPlan(planningPlanId);
+    const deviation = repository.getDeviation(deviationId);
 
     if (!plan || !deviation) return false;
 
     // CRITICAL: SAFETY_CRITICAL or AUTHORITY_CRITICAL triggers safe stop
     if (deviation.severity === 'SAFETY_CRITICAL' || 
         deviation.severity === 'AUTHORITY_CRITICAL') {
-      plan.status = 'SAFE_STOPPED';
+      plan.replanningStatus = 'SAFE_STOPPED';
       plan.updatedAt = now();
+      repository.updatePlanningPlan(plan);
       return true;
     }
 
@@ -712,7 +731,7 @@ export class MultiagentEngine {
     acceptedGoals: string[],
     acceptedConstraints: string[],
     authorityScope: string[],
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): AgentDeclaration {
     const agent: AgentDeclaration = {
       ...createTimestamped(),
@@ -729,7 +748,7 @@ export class MultiagentEngine {
       provenance: [`Agent ${name} declared`]
     };
 
-    graph.addAgentDeclaration(agent);
+    repository.addAgentDeclaration(agent);
     return agent;
   }
 
@@ -743,7 +762,7 @@ export class MultiagentEngine {
     goalOrAction: string,
     conditions: string[],
     constraints: string[],
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): MultiagentCommitment {
     const commitment: MultiagentCommitment = {
       ...createTimestamped(),
@@ -760,7 +779,7 @@ export class MultiagentEngine {
       provenance: [`Commitment from ${issuerId} to ${receiverId}`]
     };
 
-    graph.addMultiagentCommitment(commitment);
+    repository.addMultiagentCommitment(commitment);
     return commitment;
   }
 
@@ -771,10 +790,10 @@ export class MultiagentEngine {
     delegatorId: string,
     delegateeId: string,
     requestedAuthority: string,
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): { allowed: boolean; reason?: string } {
-    const delegator = graph.getAgentDeclaration(delegatorId);
-    const delegatee = graph.getAgentDeclaration(delegateeId);
+    const delegator = repository.getAgentDeclaration(delegatorId);
+    const delegatee = repository.getAgentDeclaration(delegateeId);
 
     if (!delegator || !delegatee) {
       return { allowed: false, reason: 'Agent not found' };
@@ -809,47 +828,47 @@ export class PlanHistoryEngine {
    * Record plan history event
    */
   recordEvent(
-    planId: string,
+    planningPlanId: string,
     version: number,
     event: PlanHistoryEntry['event'],
     description: string,
     evidence: string[],
     humanIntervention: string | undefined,
     constraintsChanged: boolean,
-    graph: EvidenceGraphMemory
+    repository: WP5PlanningRepository
   ): PlanHistoryEntry {
     const entry: PlanHistoryEntry = {
       ...createTimestamped(),
       entryId: generateId(),
-      planId,
+      planningPlanId,
       version,
       event,
       description,
       evidence,
       humanIntervention,
       constraintsChanged,
-      provenance: [`History event for plan ${planId}`]
+      provenance: [`History event for plan ${planningPlanId}`]
     };
 
-    graph.addPlanHistoryEntry(entry);
+    repository.addPlanHistoryEntry(entry);
     return entry;
   }
 
   /**
    * Get full plan history (§31)
    */
-  getPlanHistory(planId: string, graph: EvidenceGraphMemory): PlanHistoryEntry[] {
-    return graph.getAllPlanHistoryEntries().filter(e => e.planId === planId);
+  getPlanHistory(planningPlanId: string, repository: WP5PlanningRepository): PlanHistoryEntry[] {
+    return repository.getAllPlanHistoryEntries().filter((e: PlanHistoryEntry) => e.planningPlanId === planningPlanId);
   }
 
   /**
    * Generate WHAT CHANGED trace (§32)
    */
   generateWhatChangedTrace(
-    planId: string,
-    graph: EvidenceGraphMemory
+    planningPlanId: string,
+    repository: WP5PlanningRepository
   ): WhatChangedTrace | null {
-    const history = this.getPlanHistory(planId, graph);
+    const history = this.getPlanHistory(planningPlanId, repository);
     if (history.length === 0) return null;
 
     const chain = history.map(entry => ({
@@ -862,13 +881,13 @@ export class PlanHistoryEngine {
     const trace: WhatChangedTrace = {
       ...createTimestamped(),
       traceId: generateId(),
-      planId,
+      planningPlanId,
       chain,
-      summary: `Plan ${planId} has ${history.length} history events`,
-      provenance: [`What-changed trace for plan ${planId}`]
+      summary: `Plan ${planningPlanId} has ${history.length} history events`,
+      provenance: [`What-changed trace for plan ${planningPlanId}`]
     };
 
-    graph.addWhatChangedTrace(trace);
+    repository.addWhatChangedTrace(trace);
     return trace;
   }
 }

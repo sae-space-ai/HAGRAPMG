@@ -9,6 +9,7 @@ import { runAllTests } from '../src/tests/framework.ts';
 import '../src/tests/all-tests.ts';
 import '../src/tests/wp3-tests.ts';
 import '../src/tests/wp4-tests.ts';
+import '../src/tests/wp5-tests.ts';
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');

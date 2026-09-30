@@ -1,11 +1,12 @@
 /**
- * HAG-RAP LAB — WP5 Domain Types
+ * HAG-RAP LAB — WP5 Domain Types (Refactored)
  * Deep Planning & Continual Replanning
  * 
- * SCIENTIFIC STATUS: IMPLEMENTED
+ * ARCHITECTURE: Bounded Planning Context
+ * WP5 references canonical WP2-WP4 objects through stable IDs.
+ * WP5-specific state is orthogonal and composable.
  * 
- * ARCHITECTURAL RULE: WP5 extends WP2-WP4.
- * Uses WP5-prefixed names to avoid conflicts with canonical types.
+ * SCIENTIFIC STATUS: IMPLEMENTED
  */
 
 import { Timestamped, Uncertainty } from './types.ts';
@@ -16,8 +17,6 @@ import { Timestamped, Uncertainty } from './types.ts';
 
 export type AuthoritySource = 'HUMAN' | 'SYSTEM' | 'DELEGATED' | 'UNKNOWN';
 
-export type AuthorityLevel = 'ABSOLUTE' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
-
 export type ConstraintMutability = 
   | 'NON_NEGOTIABLE'
   | 'HUMAN_LOCKED'
@@ -25,7 +24,7 @@ export type ConstraintMutability =
   | 'PLAN_LOCAL'
   | 'ADVISORY';
 
-export type ConstraintType =
+export type PlanningConstraintType =
   | 'SAFETY'
   | 'RIGHTS'
   | 'LEGAL'
@@ -42,91 +41,44 @@ export type ConstraintType =
   | 'OPERATIONAL'
   | 'OTHER';
 
-export interface AuthorityBoundary extends Timestamped {
-  boundaryId: string;
-  caseId: string;
-  description: string;
-  scope: string[];
-  level: AuthorityLevel;
-  source: AuthoritySource;
-  locked: boolean;
-  provenance: string[];
-}
-
-export interface AuthorityDecision extends Timestamped {
-  decisionId: string;
-  caseId: string;
-  authorityId: string;
-  action: string;
-  targetId: string;
-  targetType: string;
-  rationale: string;
-  previousState: unknown;
-  newState: unknown;
-  provenance: string[];
-}
-
-export interface AuthorityViolation extends Timestamped {
-  violationId: string;
-  caseId: string;
-  constraintId: string;
-  planId?: string;
-  description: string;
-  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  detected: boolean;
-  resolved: boolean;
-  resolution?: string;
-  provenance: string[];
-}
-
 // ============================================================
-// GOAL MODEL (§6-7)
+// PLANNING GOAL (§6-7)
+// References canonical Goal via ID, adds planning metadata
 // ============================================================
 
-export type GoalStatus =
-  | 'PROPOSED'
-  | 'ACTIVE'
-  | 'PARTIALLY_SATISFIED'
-  | 'SATISFIED'
-  | 'BLOCKED'
-  | 'CONTESTED'
-  | 'ABANDONED'
-  | 'SUPERSEDED'
-  | 'UNKNOWN';
-
-export interface Goal extends Timestamped {
-  goalId: string;
+export interface PlanningGoal extends Timestamped {
+  planningGoalId: string;
+  canonicalGoalId: string; // Reference to canonical Goal
   caseId: string;
-  description: string;
+  parentPlanningGoalId?: string;
   origin: 'HUMAN' | 'SYSTEM' | 'DECOMPOSED';
-  parentGoalId?: string;
   priority: number;
   successCriteria: string[];
   failureCriteria: string[];
-  dependencies: string[];
-  constraints: string[];
+  dependencyIds: string[];
+  constraintIds: string[]; // References to PlanningConstraints
   uncertainties: Uncertainty[];
-  status: GoalStatus;
+  decompositionStatus: 'ATOMIC' | 'DECOMPOSED' | 'DRIFT_DETECTED';
+  driftScore?: number;
   version: number;
   provenance: string[];
 }
 
 export interface GoalDecomposition extends Timestamped {
   decompositionId: string;
-  parentGoalId: string;
-  subgoalIds: string[];
+  parentPlanningGoalId: string;
+  subgoalPlanningIds: string[];
   method: string;
   assumptions: string[];
   evidence: string[];
   constraintsInherited: string[];
   constraintsAdded: string[];
-  constraintsNotApplicable: Array<{ constraintId: string; justification: string }>;
   provenance: string[];
 }
 
 export interface GoalRevision extends Timestamped {
   revisionId: string;
-  goalId: string;
+  planningGoalId: string;
   previousVersion: number;
   newVersion: number;
   changeType: 'MODIFIED' | 'SUPERSEDED' | 'ABANDONED';
@@ -137,13 +89,15 @@ export interface GoalRevision extends Timestamped {
 }
 
 // ============================================================
-// CONSTRAINT MODEL (§8-9)
+// PLANNING CONSTRAINT (§8-9)
+// References canonical Constraint via ID, adds planning authority
 // ============================================================
 
-export interface WP5Constraint extends Timestamped {
-  constraintId: string;
+export interface PlanningConstraint extends Timestamped {
+  planningConstraintId: string;
+  canonicalConstraintId?: string; // Optional reference to canonical Constraint
   caseId: string;
-  type: ConstraintType;
+  type: PlanningConstraintType;
   description: string;
   source: 'HUMAN' | 'SYSTEM' | 'DERIVED';
   authority: AuthoritySource;
@@ -159,7 +113,7 @@ export interface WP5Constraint extends Timestamped {
 }
 
 // ============================================================
-// PLANNING OPERATORS (§10)
+// PLANNING OPERATOR (§10)
 // ============================================================
 
 export interface PlanningOperator extends Timestamped {
@@ -195,42 +149,53 @@ export interface PlanningOperator extends Timestamped {
 }
 
 // ============================================================
-// PLAN MODEL (§11-12)
+// PLANNING PLAN (§11-12)
+// References canonical Plan via ID, adds orthogonal planning states
 // ============================================================
 
-export type PlanStatus =
-  | 'CANDIDATE'
-  | 'UNDER_EVALUATION'
+// ORTHOGONAL DIMENSIONS - Do not collapse into single enum
+export type PlanningLifecycleStatus = 
+  | 'DRAFT'
+  | 'EVALUATED'
+  | 'SELECTED'
+  | 'EXECUTING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'STOPPED';
+
+export type PlanningAdmissibility =
+  | 'NOT_EVALUATED'
   | 'ADMISSIBLE'
   | 'INADMISSIBLE'
-  | 'SELECTED_FOR_SIMULATION'
-  | 'AWAITING_HUMAN_REVIEW'
-  | 'APPROVED_FOR_RESEARCH_SIMULATION'
-  | 'ACTIVE_SIMULATION'
+  | 'CONTESTED'
+  | 'UNKNOWN';
+
+export type PlanningReplanningStatus =
+  | 'STABLE'
   | 'DEVIATED'
   | 'REPAIRING'
   | 'REPLANNING'
-  | 'BLOCKED'
-  | 'SAFE_STOPPED'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'ABANDONED'
-  | 'SUPERSEDED'
-  | 'UNKNOWN';
+  | 'SAFE_STOPPED';
+
+export type PlanningAuthorityStatus =
+  | 'WITHIN_AUTHORITY'
+  | 'HUMAN_REVIEW_REQUIRED'
+  | 'AUTHORITY_BLOCKED';
 
 export type OrderingRelation = 'BEFORE' | 'AFTER' | 'CONCURRENT_WITH' | 'INDEPENDENT_OF' | 'UNKNOWN';
 
-export interface Plan extends Timestamped {
-  planId: string;
+export interface PlanningPlan extends Timestamped {
+  planningPlanId: string;
+  canonicalPlanId?: string; // Optional reference to canonical Plan
   caseId: string;
-  goalIds: string[];
+  goalIds: string[]; // References to PlanningGoals
   worldModelId?: string;
   worldStateId?: string;
-  steps: PlanStep[];
+  steps: PlanningStep[];
   dependencies: PlanDependency[];
   branches: PlanBranch[];
-  constraints: string[];
-  lockedConstraints: string[];
+  constraintIds: string[]; // References to PlanningConstraints
+  lockedConstraintIds: string[];
   assumptions: string[];
   uncertainties: Uncertainty[];
   expectedEffects: string[];
@@ -239,16 +204,21 @@ export interface Plan extends Timestamped {
   risk: 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
   humanGates: string[];
   fallbacks: string[];
-  validationStatus: 'VALID' | 'INVALID' | 'PENDING' | 'UNKNOWN';
-  status: PlanStatus;
+  
+  // ORTHOGONAL STATES - Separate dimensions
+  lifecycleStatus: PlanningLifecycleStatus;
+  admissibility: PlanningAdmissibility;
+  replanningStatus: PlanningReplanningStatus;
+  authorityStatus: PlanningAuthorityStatus;
+  
   version: number;
-  parentPlanId?: string;
+  parentPlanningPlanId?: string;
   provenance: string[];
 }
 
-export interface PlanStep extends Timestamped {
+export interface PlanningStep extends Timestamped {
   stepId: string;
-  planId: string;
+  planningPlanId: string;
   operatorId: string;
   preconditions: string[];
   expectedEffects: string[];
@@ -269,7 +239,7 @@ export interface PlanStep extends Timestamped {
 
 export interface PlanDependency extends Timestamped {
   dependencyId: string;
-  planId: string;
+  planningPlanId: string;
   fromStepId: string;
   toStepId: string;
   relation: OrderingRelation;
@@ -278,14 +248,14 @@ export interface PlanDependency extends Timestamped {
 
 export interface PlanBranch extends Timestamped {
   branchId: string;
-  planId: string;
+  planningPlanId: string;
   condition: string;
   trigger: string;
   requiredObservation?: string;
   evidence: string[];
   uncertainties: Uncertainty[];
   constraints: string[];
-  steps: PlanStep[];
+  steps: PlanningStep[];
   fallback: boolean;
   humanGate: boolean;
   version: number;
@@ -293,7 +263,7 @@ export interface PlanBranch extends Timestamped {
 
 export interface PlanEvaluation extends Timestamped {
   evaluationId: string;
-  planId: string;
+  planningPlanId: string;
   goalAlignment: number;
   constraintsSatisfied: string[];
   constraintsViolated: Array<{ constraintId: string; reason: string }>;
@@ -310,8 +280,8 @@ export interface PlanEvaluation extends Timestamped {
 
 export interface PlanAlternative extends Timestamped {
   alternativeId: string;
-  planId: string;
-  alternativePlanId: string;
+  planningPlanId: string;
+  alternativePlanningPlanId: string;
   comparisonRationale: string;
   whyGenerated: string;
   whySelected: boolean;
@@ -323,7 +293,7 @@ export interface PlanAlternative extends Timestamped {
 
 export interface PlanFailure extends Timestamped {
   failureId: string;
-  planId: string;
+  planningPlanId: string;
   stepId?: string;
   failureType: string;
   description: string;
@@ -335,7 +305,7 @@ export interface PlanFailure extends Timestamped {
 
 export interface PlanRepair extends Timestamped {
   repairId: string;
-  planId: string;
+  planningPlanId: string;
   deviationId: string;
   repairType: 'STEP_REPLACEMENT' | 'REORDERING' | 'RETRY' | 'FALLBACK_ACTIVATION' | 'INFORMATION_GATHERING' | 'RESOURCE_REALLOCATION';
   description: string;
@@ -354,7 +324,7 @@ export interface PlanRepair extends Timestamped {
 
 export interface PlanRevision extends Timestamped {
   revisionId: string;
-  planId: string;
+  planningPlanId: string;
   previousVersion: number;
   newVersion: number;
   revisionType: 'REPAIR' | 'REPLAN' | 'HUMAN_MODIFICATION';
@@ -370,7 +340,7 @@ export interface PlanRevision extends Timestamped {
 
 export interface PlanSelectionRecord extends Timestamped {
   selectionId: string;
-  planId: string;
+  planningPlanId: string;
   selectedBy: 'HUMAN' | 'SYSTEM';
   selectorId: string;
   rationale: string;
@@ -381,7 +351,7 @@ export interface PlanSelectionRecord extends Timestamped {
 
 export interface PlanExecutionTrace extends Timestamped {
   traceId: string;
-  planId: string;
+  planningPlanId: string;
   executionType: 'SIMULATED' | 'OBSERVED' | 'PREDICTED' | 'REQUESTED' | 'NOT_EXECUTED';
   steps: Array<{
     stepId: string;
@@ -415,7 +385,7 @@ export type DeviationSeverity = 'MINOR' | 'MAJOR' | 'SAFETY_CRITICAL' | 'AUTHORI
 
 export interface Deviation extends Timestamped {
   deviationId: string;
-  planId: string;
+  planningPlanId: string;
   stepId?: string;
   type: DeviationType;
   severity: DeviationSeverity;
@@ -437,7 +407,7 @@ export interface Deviation extends Timestamped {
 
 export interface ResourceRequirement extends Timestamped {
   requirementId: string;
-  planId: string;
+  planningPlanId: string;
   stepId?: string;
   resource: string;
   required: number;
@@ -448,7 +418,7 @@ export interface ResourceRequirement extends Timestamped {
 
 export interface ResourceConflict extends Timestamped {
   conflictId: string;
-  planId: string;
+  planningPlanId: string;
   resource: string;
   conflictingSteps: string[];
   description: string;
@@ -545,7 +515,7 @@ export interface WP5PlanCard extends Timestamped {
 
 export interface PlanHistoryEntry extends Timestamped {
   entryId: string;
-  planId: string;
+  planningPlanId: string;
   version: number;
   event: 'CREATED' | 'EVALUATED' | 'SELECTED' | 'DEVIATED' | 'REPAIRED' | 'REPLANNED' | 'HUMAN_MODIFIED' | 'COMPLETED' | 'FAILED' | 'ABANDONED';
   description: string;
@@ -557,7 +527,7 @@ export interface PlanHistoryEntry extends Timestamped {
 
 export interface WhatChangedTrace extends Timestamped {
   traceId: string;
-  planId: string;
+  planningPlanId: string;
   chain: Array<{
     event: string;
     description: string;
