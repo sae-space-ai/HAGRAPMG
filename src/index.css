@@ -48,11 +48,11 @@
   --predicted-purple: #d8c8e8;
   --unknown-neutral: #e0e4e8;
   
-  /* Text Colors */
-  --text-primary: #2c3e50;
-  --text-secondary: #5a6c7d;
-  --text-tertiary: #8a9ba8;
-  --text-muted: #a8b5c0;
+  /* Text Colors - High Contrast for Readability */
+  --text-primary: #1a2332;
+  --text-secondary: #3d4f60;
+  --text-tertiary: #5a6c7d;
+  --text-muted: #7a8a98;
   
   /* Borders & Dividers */
   --border-light: #e8edf2;

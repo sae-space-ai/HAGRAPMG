@@ -266,9 +266,9 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <div className="rounded p-2" style={{ border: '1px solid var(--uncertainty-cream)', backgroundColor: 'var(--uncertainty-cream)', opacity: 0.7 }}>
-              <div className="mb-1" style={{ color: '#5a4a2d' }}>⚠ Scientific Honesty</div>
-              <div className="text-[10px]" style={{ color: '#5a4a2d' }}>
+            <div className="rounded p-2" style={{ border: '1px solid var(--uncertainty-cream)', backgroundColor: 'var(--uncertainty-cream)' }}>
+              <div className="mb-1" style={{ color: '#3d2e1a', fontWeight: 600 }}>⚠ Scientific Honesty</div>
+              <div className="text-[10px]" style={{ color: '#3d2e1a' }}>
                 This is a RESEARCH INSTRUMENT. All data is SYNTHETIC. No operational decisions are made.
                 Capabilities marked EXPERIMENTAL are not validated scientific results.
               </div>
@@ -293,9 +293,9 @@ function OverviewPanel({ loop, stats }: { loop: CognitiveLoopState; stats: Retur
           Human-Governed Deep Reasoning, Abstraction and Planning for Trustworthy Cognitive AI.
         </p>
         <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-          <div className="rounded p-2" style={{ border: '1px solid var(--primary-blue-light)', backgroundColor: 'var(--primary-blue-light)', opacity: 0.5 }}>
-            <div style={{ color: 'var(--primary-blue-hover)' }}>Scientific Hypothesis</div>
-            <div className="mt-1" style={{ color: 'var(--text-secondary)' }}>Trustworthy cognitive performance requires structured coupling between learned representations, typed evidence, causal structure, symbolic constraints, abstraction, world models, planning, assurance, and human governance.</div>
+          <div className="rounded p-2" style={{ border: '1px solid var(--primary-blue-light)', backgroundColor: 'var(--primary-blue-light)' }}>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Scientific Hypothesis</div>
+            <div className="mt-1" style={{ color: 'var(--text-primary)' }}>Trustworthy cognitive performance requires structured coupling between learned representations, typed evidence, causal structure, symbolic constraints, abstraction, world models, planning, assurance, and human governance.</div>
           </div>
           <div className="rounded p-2" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-muted)' }}>
             <div style={{ color: 'var(--text-tertiary)' }}>Current Case</div>
@@ -434,7 +434,7 @@ function ClaimsPanel({ loop, onWhy }: { loop: CognitiveLoopState; onWhy: (id: st
               )}
             </div>
             {c.uncertainty.length > 0 && (
-              <div className="mt-2 text-xs" style={{ color: 'var(--uncertainty-cream)', opacity: 0.8 }}>
+              <div className="mt-2 text-xs" style={{ color: '#5a4a2d' }}>
                 {c.uncertainty.map((u, i) => (
                   <div key={i}>⚠ [{u.type}] {u.description}</div>
                 ))}
@@ -457,21 +457,21 @@ function ContradictionsPanel({ loop }: { loop: CognitiveLoopState }) {
       </h3>
       <div className="space-y-2">
         {contradictions.map(c => (
-          <div key={c.id} className="rounded p-3" style={{ border: '1px solid var(--contradiction-coral)', backgroundColor: 'var(--contradiction-coral)', opacity: 0.8 }}>
+          <div key={c.id} className="rounded p-3" style={{ border: '1px solid var(--contradiction-coral)', backgroundColor: 'var(--contradiction-coral)' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono" style={{ color: 'var(--contradiction-coral)' }}>CONTRADICTION</span>
+              <span className="text-xs font-mono" style={{ color: '#5a2d3a', fontWeight: 600 }}>CONTRADICTION</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Classified: {c.classification}</span>
+                <span className="text-xs" style={{ color: '#5a2d3a' }}>Classified: {c.classification}</span>
                 <StatusBadge status={c.resolved ? 'COMPLETED' : 'ACTIVE'} />
               </div>
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-xs" style={{ color: '#5a2d3a' }}>
               <div>Claim A: {loop.graph.getClaim(c.claimAId)?.content || c.claimAId}</div>
-              <div className="my-1" style={{ color: 'var(--contradiction-coral)' }}>⚡ CONTRADICTS ⚡</div>
+              <div className="my-1" style={{ color: '#5a2d3a', fontWeight: 600 }}>⚡ CONTRADICTS ⚡</div>
               <div>Claim B: {loop.graph.getClaim(c.claimBId)?.content || c.claimBId}</div>
             </div>
             {c.resolution && (
-              <div className="mt-2 text-xs pt-2" style={{ color: 'var(--text-tertiary)', borderTop: '1px solid var(--border-light)' }}>
+              <div className="mt-2 text-xs pt-2" style={{ color: '#5a2d3a', borderTop: '1px solid var(--border-light)' }}>
                 Resolution: {c.resolution}
               </div>
             )}
@@ -515,7 +515,7 @@ function ReasoningPanel({ loop }: { loop: CognitiveLoopState }) {
                 Inputs: {inf.inputClaimIds.length} | Assumptions: {inf.assumptions.length}
               </div>
               {inf.uncertainty.length > 0 && (
-                <div className="text-xs mt-1" style={{ color: 'var(--uncertainty-cream)', opacity: 0.8 }}>
+                <div className="text-xs mt-1" style={{ color: '#5a4a2d' }}>
                   ⚠ {inf.uncertainty.map(u => `[${u.type}] ${u.description}`).join('; ')}
                 </div>
               )}
@@ -527,9 +527,9 @@ function ReasoningPanel({ loop }: { loop: CognitiveLoopState }) {
       <div className="rounded-lg p-4" style={{ border: '1px solid var(--border-light)', backgroundColor: 'var(--surface-base)' }}>
         <h3 className="text-sm font-mono mb-2" style={{ color: 'var(--text-secondary)' }}>Assumptions ({loop.graph.getAllAssumptions().length})</h3>
         {loop.graph.getAllAssumptions().map(a => (
-          <div key={a.id} className="rounded p-2 mb-2" style={{ border: '1px solid var(--assumed-amber)', backgroundColor: 'var(--assumed-amber)', opacity: 0.7 }}>
-            <div className="text-sm" style={{ color: '#5a4a2d' }}>{a.content}</div>
-            <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>Justification: {a.justification}</div>
+          <div key={a.id} className="rounded p-2 mb-2" style={{ border: '1px solid var(--assumed-amber)', backgroundColor: 'var(--assumed-amber)' }}>
+            <div className="text-sm" style={{ color: '#3d2e1a', fontWeight: 600 }}>{a.content}</div>
+            <div className="text-xs mt-1" style={{ color: '#3d2e1a' }}>Justification: {a.justification}</div>
             <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Challengeable: {a.challengeable ? 'YES' : 'NO'}</div>
           </div>
         ))}
